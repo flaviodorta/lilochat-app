@@ -6,21 +6,34 @@ import LoginButton from './login-button';
 import { useDisclosure } from '@chakra-ui/react';
 import AuthModal from '../login-modal';
 import { Luckiest_Guy } from 'next/font/google';
+import useModalAuthStore from '@/zustand/modal-auth-store';
+import { useAuth } from '@/context/auth-context';
+import { useEffect } from 'react';
+import { BiUser } from 'react-icons/bi';
+import { FaUserCircle } from 'react-icons/fa';
+import ProfileButton from './profile-button';
 
 const luckiestGuy = Luckiest_Guy({ subsets: ['latin'], weight: ['400'] });
 
 const Header = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onClose, onOpen, toggle } = useModalAuthStore();
+  const { isAuthenticated, user, setIsAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) onClose();
+  }, [isAuthenticated]);
+
+  const deauthenticated = () => setIsAuthenticated(false);
 
   return (
     <>
-      <div className='px-2 md:px-4 xl:px-48 w-full flex justify-between items-center h-24'>
+      <div className='fixed top-0 left-0 px-2 md:px-4 xl:px-48 w-full flex justify-between items-center h-24'>
         <div className='hidden md:block mx-4'>
-          <span
-            className={`text-4xl luckiest-guy-regular text-purple-700 ${luckiestGuy.className}`}
+          <div
+            className={`text-4xl inline-block luckiest-guy-regular text-purple-700 ${luckiestGuy.className}`}
           >
             lilochat
-          </span>
+          </div>
         </div>
 
         <div className='flex-1 items-center justify-center flex gap-8 mx-4'>
@@ -31,8 +44,15 @@ const Header = () => {
           </div>
         </div>
 
-        <div className='mx-4'>
-          <LoginButton onClick={onOpen} />
+        <div className='mx-4 flex items-center'>
+          {!isAuthenticated ? (
+            <LoginButton onClick={onOpen} />
+          ) : (
+            <ProfileButton
+              email={user?.email!}
+              deauthenticated={deauthenticated}
+            />
+          )}
         </div>
       </div>
 

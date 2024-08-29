@@ -24,6 +24,9 @@ import { useBoolean } from 'usehooks-ts';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import signUpWithEmail from '@/actions/signup-with-email';
+import { useAuth } from '@/context/auth-context';
+import signInWithEmail from '@/actions/signin-with-email';
 
 type Dimension = {
   w: number;
@@ -44,6 +47,8 @@ const AuthModal = ({
     if (modal === 'signup') setDimension((state) => ({ ...state, h: 460 }));
     if (modal === 'login') setDimension((state) => ({ ...state, h: 510 }));
   }, [modal]);
+
+  const { isAuthenticated } = useAuth();
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -91,12 +96,11 @@ const SignUpModal = ({
   });
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data);
+    signUpWithEmail(data);
   };
 
   return (
     <motion.div
-      // ref={ref}
       initial={false}
       animate={{ x: modal === 'signup' ? '0' : '100%' }}
       transition={{ bounce: 0 }}
@@ -106,15 +110,15 @@ const SignUpModal = ({
       <ModalBody>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={4}>
-            <span className='text-center'>
+            <div className='text-center'>
               Have account yet?{' '}
-              <span
+              <div
                 onClick={() => setModal('login')}
-                className='text-purple-600 cursor-pointer font-bold transition-colors duration-75 hover:text-purple-700'
+                className='text-purple-600 inline-block cursor-pointer font-bold transition-colors duration-75 hover:text-purple-700'
               >
                 Sign in here
-              </span>
-            </span>
+              </div>
+            </div>
 
             <InputGroup className='flex flex-col gap-1'>
               <InputLeftElement pointerEvents='none'>
@@ -127,9 +131,9 @@ const SignUpModal = ({
                 isInvalid={!!errors.email}
               />
               {errors.email && (
-                <span className='text-red-500 text-xs'>
+                <div className='text-red-500 text-xs'>
                   {errors.email.message}
-                </span>
+                </div>
               )}
             </InputGroup>
 
@@ -149,9 +153,9 @@ const SignUpModal = ({
                 </Button>
               </InputRightElement>
               {errors.password && (
-                <span className='text-red-500 text-xs'>
+                <div className='text-red-500 text-xs'>
                   {errors.password.message}
-                </span>
+                </div>
               )}
             </InputGroup>
 
@@ -234,8 +238,12 @@ const SignInModal = ({
     },
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data);
+  const { setIsAuthenticated } = useAuth();
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const { data, error } = await signInWithEmail(values);
+    if (data.session?.access_token) setIsAuthenticated(true);
+    else if (error) setIsAuthenticated(false);
   };
 
   return (
@@ -249,15 +257,15 @@ const SignInModal = ({
       <ModalBody>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={4}>
-            <span className='text-center'>
+            <div className='text-center'>
               Don{"'"}t have account yet?{' '}
-              <span
+              <div
                 onClick={() => setModal('signup')}
-                className='text-purple-600 cursor-pointer font-bold transition-colors duration-75 hover:text-purple-700'
+                className='text-purple-600 inline-block cursor-pointer font-bold transition-colors duration-75 hover:text-purple-700'
               >
                 Sign up here
-              </span>
-            </span>
+              </div>
+            </div>
 
             <InputGroup className='flex flex-col gap-1'>
               <InputLeftElement pointerEvents='none'>
@@ -270,9 +278,9 @@ const SignInModal = ({
                 isInvalid={!!errors.email}
               />
               {errors.email && (
-                <span className='text-red-500 text-xs'>
+                <div className='text-red-500 text-xs'>
                   {errors.email.message}
-                </span>
+                </div>
               )}
             </InputGroup>
 
@@ -292,18 +300,18 @@ const SignInModal = ({
                 </Button>
               </InputRightElement>
               {errors.password && (
-                <span className='text-red-500 text-xs'>
+                <div className='text-red-500 text-xs'>
                   {errors.password.message}
-                </span>
+                </div>
               )}
             </InputGroup>
 
             <div className='flex justify-between'>
               <Checkbox colorScheme='purple'>Remember me</Checkbox>
 
-              <span className='text-purple-600 cursor-pointer font-bold'>
+              <div className='text-purple-600 cursor-pointer font-bold'>
                 Forgot password
-              </span>
+              </div>
             </div>
 
             <button type='submit' className='button' onClick={undefined}>

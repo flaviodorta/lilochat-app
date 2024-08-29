@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import '../styles/globals.css';
 import Header from '@/components/header';
 import { ChakraProvider } from '@chakra-ui/react';
+import { AuthProvider } from '@/context/auth-context';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,12 +19,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en'>
-      <ChakraProvider>
-        <body className={inter.className}>
-          <Header />
-          {children}
-        </body>
-      </ChakraProvider>
+      <body className={inter.className}>
+        <ChakraProvider>
+          <AuthProvider>
+            <Header />
+            {children}
+          </AuthProvider>
+        </ChakraProvider>
+      </body>
     </html>
   );
 }
