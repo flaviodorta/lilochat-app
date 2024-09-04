@@ -12,15 +12,26 @@ import { useEffect } from 'react';
 import { BiUser } from 'react-icons/bi';
 import { FaUserCircle } from 'react-icons/fa';
 import ProfileButton from './profile-button';
+import CreateRoomModal from '../create-room-modal';
+import useModalCreateRoomStore from '@/zustand/modal-create-room-store';
 
 const luckiestGuy = Luckiest_Guy({ subsets: ['latin'], weight: ['400'] });
 
 const Header = () => {
-  const { isOpen, onClose, onOpen, toggle } = useModalAuthStore();
+  const {
+    isOpen: isOpenAuth,
+    onClose: onCloseAuth,
+    onOpen: onOpenAuth,
+  } = useModalAuthStore();
+  const {
+    isOpen: isOpenCreateRoom,
+    onClose: onCloseCreateRoom,
+    onOpen: onOpenCreateRoom,
+  } = useModalCreateRoomStore();
   const { isAuthenticated, user, setIsAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated) onClose();
+    if (isAuthenticated) onCloseAuth();
   }, [isAuthenticated]);
 
   const deauthenticated = () => setIsAuthenticated(false);
@@ -40,13 +51,13 @@ const Header = () => {
           <SearchRoom />
 
           <div className='hidden md:block'>
-            <CreateRoomButton />
+            <CreateRoomButton onOpen={onOpenCreateRoom} />
           </div>
         </div>
 
         <div className='mx-4 flex items-center'>
           {!isAuthenticated ? (
-            <LoginButton onClick={onOpen} />
+            <LoginButton onClick={onOpenAuth} />
           ) : (
             <ProfileButton
               email={user?.email!}
@@ -56,7 +67,8 @@ const Header = () => {
         </div>
       </div>
 
-      <AuthModal isOpen={isOpen} onClose={onClose} />
+      <AuthModal isOpen={isOpenAuth} onClose={onCloseAuth} />
+      <CreateRoomModal isOpen={isOpenCreateRoom} onClose={onCloseCreateRoom} />
     </>
   );
 };

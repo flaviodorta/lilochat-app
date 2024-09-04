@@ -22,7 +22,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ChakraProvider>
           <AuthProvider>
-            <Header />
+            {/* <Header /> */}
             {children}
           </AuthProvider>
         </ChakraProvider>

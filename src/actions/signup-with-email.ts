@@ -1,8 +1,8 @@
 'use server';
 
 import supabaseServerClient from '@/supabase/supabase-server';
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+// import { revalidatePath } from 'next/cache';
+// import { redirect } from 'next/navigation';
 
 const signUpWithEmail = async ({
   email,
@@ -26,8 +26,10 @@ const signUpWithEmail = async ({
     console.log('USER CREATED', data);
   }
 
-  revalidatePath('/', 'layout');
-  redirect('/');
+  // revalidatePath('/', 'layout');
+  // redirect('/');
+
+  return { data: JSON.stringify(data) };
 };
 
 export default signUpWithEmail;

@@ -83,6 +83,8 @@ const SignUpModal = ({
     password: z.string().min(6, 'Password must be at least 6 characters long.'),
   });
 
+  const { setIsAuthenticated, setUser } = useAuth();
+
   const {
     register,
     handleSubmit,
@@ -95,8 +97,15 @@ const SignUpModal = ({
     },
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    signUpWithEmail(data);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const { data } = await signUpWithEmail(values);
+    const dataParsed = JSON.parse(data);
+    console.log('data sign up', dataParsed);
+    if (dataParsed.user) {
+      await signInWithEmail(values);
+      setIsAuthenticated(true);
+      setUser(dataParsed.user);
+    }
   };
 
   return (
@@ -106,7 +115,7 @@ const SignUpModal = ({
       transition={{ bounce: 0 }}
       className='absolute w-full'
     >
-      <ModalHeader className='text-center'>Sign in Lilo Chat</ModalHeader>
+      <ModalHeader className='text-center'>Sign up Lilo Chat</ModalHeader>
       <ModalBody>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Stack spacing={4}>
@@ -241,9 +250,11 @@ const SignInModal = ({
   const { setIsAuthenticated } = useAuth();
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const { data, error } = await signInWithEmail(values);
-    if (data.session?.access_token) setIsAuthenticated(true);
-    else if (error) setIsAuthenticated(false);
+    const { data } = await signInWithEmail(values);
+    const dataParsed = JSON.parse(data);
+    console.log;
+    if (dataParsed.session?.access_token) setIsAuthenticated(true);
+    // else if (error) setIsAuthenticated(false);
   };
 
   return (

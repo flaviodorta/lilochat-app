@@ -14,6 +14,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,7 +58,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [supabase]); // Adiciona supabase como dependência
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, setIsAuthenticated }}>
+    <AuthContext.Provider
+      value={{ user, isAuthenticated, setIsAuthenticated, setUser }}
+    >
       {children}
     </AuthContext.Provider>
   );
