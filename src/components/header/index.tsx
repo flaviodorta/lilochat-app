@@ -34,6 +34,8 @@ const Header = () => {
     if (isAuthenticated) onCloseAuth();
   }, [isAuthenticated]);
 
+  console.log('is auth', isAuthenticated);
+
   const deauthenticated = () => setIsAuthenticated(false);
 
   return (
@@ -57,7 +59,12 @@ const Header = () => {
 
         <div className='mx-4 flex items-center'>
           {!isAuthenticated ? (
-            <LoginButton onClick={onOpenAuth} />
+            <LoginButton
+              onClick={() => {
+                onOpenAuth();
+                console.log('click login');
+              }}
+            />
           ) : (
             <ProfileButton
               email={user?.email!}

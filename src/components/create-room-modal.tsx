@@ -1,6 +1,6 @@
 'use client';
 
-import { checkIfYouTubeVideoExists } from '@/actions/check-if-youtube-video-exists';
+import { checkIfYouTubeVideoExists as checkIfVideoExists } from '@/actions/videos/check-if-video-exists';
 import { useAuth } from '@/context/auth-context';
 import {
   Input,
@@ -17,6 +17,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ToastError from './toast-error';
 import supabaseCreateClient from '@/supabase/supabase-client';
+import { addVideoToRoom } from '@/actions/videos/add-video-to-room';
+import { getVideoData } from '@/actions/videos/get-video-data';
 
 const CreateRoomModal = ({
   isOpen,
@@ -31,22 +33,34 @@ const CreateRoomModal = ({
   const router = useRouter();
   const { user } = useAuth();
   const supabase = supabaseCreateClient();
+  const toast = useToast();
 
   const createRoom = async () => {
-    if (!roomName || !videoUrl) {
-      return ToastError('Input a room name and youtube video url');
+    if (!roomName || !videoUrl || !user) {
+      return toast({
+        title: 'Input a room name and youtube video url, and sign in',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     }
 
     setIsLoading(true);
 
     try {
-      const res = await checkIfYouTubeVideoExists(videoUrl);
+      const res = await checkIfVideoExists(videoUrl);
       console.log(res);
     } catch (err) {
-      return ToastError('Youtube video url incorrect');
+      return toast({
+        title: 'Youtube video url incorrect',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     }
 
     try {
+      // criar um server action para criação de sala
       const { data: roomData, error: roomError } = await supabase
         .from('rooms')
         .insert([
@@ -70,11 +84,22 @@ const CreateRoomModal = ({
 
       setRoomName('');
       setVideoUrl('');
+
       onClose();
+
+      console.log('user', user);
+      const videoData = await addVideoToRoom(videoUrl, roomData.id, user.id);
+      console.log(videoData);
+
       router.push(`/room/${roomData.id}`);
     } catch (err) {
-      console.log(err);
-      ToastError('Error at create room');
+      // console.log(err);
+      toast({
+        title: 'Error at create room',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -103,7 +128,11 @@ const CreateRoomModal = ({
               ></Input>
             </div>
           </div>
-          <button onClick={createRoom} className='button w-full'>
+          <button
+            onClick={createRoom}
+            disabled={isLoading}
+            className='button w-full'
+          >
             {isLoading ? 'Creating a room...' : 'Create a room'}
           </button>
         </ModalBody>

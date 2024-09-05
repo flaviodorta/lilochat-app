@@ -23,12 +23,12 @@ const signInWithEmail = async ({
   }
 
   if (data.session) {
-    console.log('USER LOGGED', data.session);
+    console.log('sign in data', data);
   }
 
   // revalidatePath('/', 'layout');
   // redirect('/');
-  console.log(data);
+  // console.log(data);
 
   return { data: JSON.stringify(data) };
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import signOut from '@/actions/signout';
+import signOut from '@/actions/auth/signout';
 import { Menu, MenuButton, MenuItem, MenuList } from '@chakra-ui/react';
 import { BiLogOut, BiUser } from 'react-icons/bi';
 import { FaUserCircle } from 'react-icons/fa';

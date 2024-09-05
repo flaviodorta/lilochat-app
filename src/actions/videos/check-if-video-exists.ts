@@ -1,10 +1,14 @@
+'use client';
+
+import { getVideoId } from '@/utils/get-video-id';
 import axios from 'axios';
 
 const YOUTUBE_API_KEY = 'AIzaSyCP4bxIAags85Q1I6CbzgP0bZkXcfwTfV8';
 
 export const checkIfYouTubeVideoExists = async (videoUrl: string) => {
   try {
-    const videoId = new URL(videoUrl).searchParams.get('v');
+    const videoId = getVideoId(videoUrl);
+
     if (!videoId) {
       throw new Error('Invalid YouTube URL');
     }
@@ -19,11 +23,16 @@ export const checkIfYouTubeVideoExists = async (videoUrl: string) => {
         },
       }
     );
-    console.log('response yt api', response);
+
     const videoExists = response.data.items.length > 0;
-    return videoExists;
+
+    if (videoExists) {
+      return videoExists;
+    } else {
+      throw new Error('Video nao existe');
+    }
   } catch (error) {
-    console.error('Error checking YouTube video:', error);
+    console.error('Error checking YouTube video:\n', error);
     return false;
   }
 };

@@ -14,6 +14,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Stack,
+  useToast,
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -24,9 +25,10 @@ import { useBoolean } from 'usehooks-ts';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import signUpWithEmail from '@/actions/signup-with-email';
+import signUpWithEmail from '@/actions/auth/signup-with-email';
 import { useAuth } from '@/context/auth-context';
-import signInWithEmail from '@/actions/signin-with-email';
+import signInWithEmail from '@/actions/auth/signin-with-email';
+import Error from 'next/error';
 
 type Dimension = {
   w: number;
@@ -77,6 +79,7 @@ const SignUpModal = ({
   setModal: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   const { value: showPassword, toggle: toggleShowPassword } = useBoolean();
+  const toast = useToast();
 
   const formSchema = z.object({
     email: z.string().email('Invalid email address.'),
@@ -98,14 +101,23 @@ const SignUpModal = ({
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const { data } = await signUpWithEmail(values);
-    const dataParsed = JSON.parse(data);
-    console.log('data sign up', dataParsed);
-    if (dataParsed.user) {
-      await signInWithEmail(values);
-      setIsAuthenticated(true);
-      setUser(dataParsed.user);
+    try {
+      await signUpWithEmail(values);
+    } catch (err) {
+      toast({
+        title: 'Rate limit exceed',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     }
+    // const dataParsed = JSON.parse(data);
+    // console.log('data sign up', dataParsed);
+    // if (dataParsed.user) {
+    //   await signInWithEmail(values);
+    //   setIsAuthenticated(true);
+    //   setUser(dataParsed.user);
+    // }
   };
 
   return (
