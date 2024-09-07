@@ -34,8 +34,6 @@ const CreateRoomModal = ({
   const [videoUrl, setVideoUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  // const { user } = useAuth();
-  // const supabase = supabaseCreateClient();
   const toast = useToast();
 
   const handleCreateRoom = async () => {

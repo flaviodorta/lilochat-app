@@ -10,3 +10,5 @@
 - quando terminar o video, remover do banco de dados
 - atualizar o video, quando comecar um novo, pausado, ou seek
 - ajeitar initial load que nao abre o modal login
+- entrar para room botao
+- chat

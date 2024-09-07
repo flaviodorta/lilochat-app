@@ -1,5 +1,6 @@
 import { getUserData } from '@/actions/user/get-user-data';
 import Header from '@/components/header';
+import RoomsList from '@/components/rooms-list';
 import Image from 'next/image';
 
 export default async function Home() {
@@ -12,8 +13,9 @@ export default async function Home() {
   }
 
   return (
-    <main className='flex min-h-screen flex-col items-center justify-between'>
+    <main className='flex bg-gray-50 min-h-screen flex-col items-center justify-between'>
       <Header user={user} />
+      <RoomsList />
     </main>
   );
 }

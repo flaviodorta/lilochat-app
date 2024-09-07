@@ -1,6 +1,6 @@
 import supabaseServerClient from '@/utils/supabase/supabase-server';
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 2;
 
 export const getRoomsPaginated = async (pageParam = 0) => {
   const start = pageParam * PAGE_SIZE;
@@ -21,6 +21,8 @@ export const getRoomsPaginated = async (pageParam = 0) => {
     `
     )
     .range(start, end);
+
+  console.log(data);
 
   if (error) {
     console.log('error paginated videos', error);

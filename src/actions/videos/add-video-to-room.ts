@@ -30,8 +30,6 @@ export const addVideoToRoom = async (
     ])
     .select();
 
-  console.log('video data', data);
-
   if (error) {
     console.log('error ao inserir video no banco de dados', error);
   }
