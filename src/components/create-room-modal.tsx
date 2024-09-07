@@ -1,7 +1,6 @@
 'use client';
 
-import { checkIfYouTubeVideoExists as checkIfVideoExists } from '@/actions/videos/check-if-video-exists';
-import { useAuth } from '@/context/auth-context';
+// import { useAuth } from '@/context/auth-context';
 import {
   Input,
   Modal,
@@ -16,26 +15,30 @@ import {
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ToastError from './toast-error';
-import supabaseCreateClient from '@/supabase/supabase-client';
+// import supabaseCreateClient from '@/utils/supabase/supabase-client';
 import { addVideoToRoom } from '@/actions/videos/add-video-to-room';
 import { getVideoData } from '@/actions/videos/get-video-data';
+import { User } from '@/types/user';
+import { createRoom } from '@/actions/rooms/create-room';
 
 const CreateRoomModal = ({
   isOpen,
   onClose,
+  user,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  user: User | null;
 }) => {
   const [roomName, setRoomName] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { user } = useAuth();
-  const supabase = supabaseCreateClient();
+  // const { user } = useAuth();
+  // const supabase = supabaseCreateClient();
   const toast = useToast();
 
-  const createRoom = async () => {
+  const handleCreateRoom = async () => {
     if (!roomName || !videoUrl || !user) {
       return toast({
         title: 'Input a room name and youtube video url, and sign in',
@@ -48,52 +51,28 @@ const CreateRoomModal = ({
     setIsLoading(true);
 
     try {
-      const res = await checkIfVideoExists(videoUrl);
-      console.log(res);
-    } catch (err) {
-      return toast({
-        title: 'Youtube video url incorrect',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+      const response = await fetch('/api/rooms/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          roomName,
+          videoUrl,
+          userId: user.id,
+        }),
       });
-    }
 
-    try {
-      // criar um server action para criação de sala
-      const { data: roomData, error: roomError } = await supabase
-        .from('rooms')
-        .insert([
-          {
-            name: roomName,
-            current_time: 0,
-            is_playing: true,
-          },
-        ])
-        .select()
-        .single();
+      const roomData = (await response.json()).data;
 
-      if (roomError) {
-        setIsLoading(false);
-        setRoomName('');
-        setVideoUrl('');
-        throw roomError;
+      if (roomData) {
+        console.log(roomData.data);
       }
 
-      console.log(roomData);
-
-      setRoomName('');
-      setVideoUrl('');
-
       onClose();
-
-      console.log('user', user);
-      const videoData = await addVideoToRoom(videoUrl, roomData.id, user.id);
-      console.log(videoData);
-
       router.push(`/room/${roomData.id}`);
     } catch (err) {
-      // console.log(err);
+      console.log(err);
       toast({
         title: 'Error at create room',
         status: 'error',
@@ -129,7 +108,7 @@ const CreateRoomModal = ({
             </div>
           </div>
           <button
-            onClick={createRoom}
+            onClick={handleCreateRoom}
             disabled={isLoading}
             className='button w-full'
           >

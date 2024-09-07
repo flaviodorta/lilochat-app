@@ -1,5 +1,7 @@
 'use client';
 
+// COMPONENTE INUTILAZDO
+
 import {
   createContext,
   useContext,
@@ -8,7 +10,7 @@ import {
   ReactNode,
 } from 'react';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js'; // Importa o tipo User do Supabase
-import supabaseCreateClient from '@/supabase/supabase-client';
+import supabaseCreateClient from '@/utils/supabase/supabase-client';
 
 interface AuthContextType {
   user: User | null;
@@ -34,27 +36,27 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       if (data?.session?.user) {
         setUser(data.session.user);
         setIsAuthenticated(true); // Atualize isAuth aqui se o usuário estiver logado
-        console.log(data);
+        // console.log('session data', data);
       }
     };
 
     checkUser();
 
-    // const { data: authListener } = supabase.auth.onAuthStateChange(
-    //   (event: AuthChangeEvent, session: Session | null) => {
-    //     if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-    //       setUser(session?.user || null);
-    //       setIsAuthenticated(true);
-    //     } else if (event === 'USER_UPDATED' || event === 'SIGNED_OUT') {
-    //       setUser(null);
-    //       setIsAuthenticated(false);
-    //     }
-    //   }
-    // );
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, session: Session | null) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          setUser(session?.user || null);
+          setIsAuthenticated(true);
+        } else if (event === 'USER_UPDATED' || event === 'SIGNED_OUT') {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      }
+    );
 
-    // return () => {
-    //   authListener?.subscription.unsubscribe();
-    // };
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
   }, [supabase]); // Adiciona supabase como dependência
 
   return (

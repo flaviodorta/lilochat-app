@@ -12,7 +12,7 @@ export const checkIfYouTubeVideoExists = async (videoUrl: string) => {
     if (!videoId) {
       throw new Error('Invalid YouTube URL');
     }
-
+    console.log('video id', videoId);
     const response = await axios.get(
       'https://www.googleapis.com/youtube/v3/videos',
       {

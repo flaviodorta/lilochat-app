@@ -1,6 +1,6 @@
 'use server';
 
-import supabaseServerClient from '@/supabase/supabase-server';
+import supabaseServerClient from '@/utils/supabase/supabase-server';
 // import { revalidatePath } from 'next/cache';
 // import { redirect } from 'next/navigation';
 
@@ -22,6 +22,8 @@ const signUpWithEmail = async ({
     throw new Error(signInError.message);
     console.log('ERROR SIGNUP', signInError);
   }
+
+  let user;
 
   // criar uma server action para create user com essa logica
   if (signUpData) {
@@ -53,6 +55,7 @@ const signUpWithEmail = async ({
               email: email,
               created_at: new Date(),
               room_id: null,
+              nickname: email.split('@')[0],
             },
           ])
           .select();
@@ -64,13 +67,18 @@ const signUpWithEmail = async ({
           throw new Error(insertError.message);
         }
 
-        if (insertData) console.log('insert data', insertData);
+        if (insertData) {
+          console.log('insert data', insertData);
+          user = insertData;
+        }
         // return { data: insertData };
       }
 
       console.log('User sign-in and insertion successful.');
     }
   }
+
+  return user;
 
   // revalidatePath('/', 'layout');
   // redirect('/');

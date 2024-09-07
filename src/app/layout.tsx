@@ -3,7 +3,9 @@ import { Inter } from 'next/font/google';
 import '../styles/globals.css';
 import Header from '@/components/header';
 import { ChakraProvider } from '@chakra-ui/react';
-import { AuthProvider } from '@/context/auth-context';
+import { QueryClient } from '@tanstack/react-query';
+import { QueryProvider } from '@/providers/query-provider';
+// import { AuthProvider } from '@/providers/auth-context';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,12 +22,12 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={inter.className}>
-        <ChakraProvider>
-          <AuthProvider>
+        <QueryProvider>
+          <ChakraProvider>
             {/* <Header /> */}
             {children}
-          </AuthProvider>
-        </ChakraProvider>
+          </ChakraProvider>
+        </QueryProvider>
       </body>
     </html>
   );

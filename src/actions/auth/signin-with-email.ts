@@ -1,6 +1,6 @@
 'use server';
 
-import supabaseServerClient from '@/supabase/supabase-server';
+import supabaseServerClient from '@/utils/supabase/supabase-server';
 // import { revalidatePath } from 'next/cache';
 // import { redirect } from 'next/navigation';
 
@@ -30,7 +30,7 @@ const signInWithEmail = async ({
   // redirect('/');
   // console.log(data);
 
-  return { data: JSON.stringify(data) };
+  return { data: JSON.stringify(data), error: JSON.stringify(error) };
 };
 
 export default signInWithEmail;

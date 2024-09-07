@@ -6,18 +6,18 @@ import { BiLogOut, BiUser } from 'react-icons/bi';
 import { FaUserCircle } from 'react-icons/fa';
 
 const ProfileButton = ({
-  email,
-  deauthenticated,
-}: {
-  email: string;
-  deauthenticated: () => void;
+  nickname,
+}: // deauthenticated,
+{
+  nickname: string;
+  // deauthenticated: () => void;
 }) => {
   return (
     <Menu>
       <MenuButton>
         <div className='flex space-x-3'>
           <span className='hidden md:block text-lg text-purple-600 font-bold'>
-            Hi, {email?.split('@')[0]}
+            Hi, {nickname}
           </span>
           <FaUserCircle className='text-purple-600 w-6 h-6' />
         </div>
@@ -27,7 +27,7 @@ const ProfileButton = ({
         <MenuItem
           onClick={() => {
             signOut();
-            deauthenticated();
+            // deauthenticated();
           }}
           icon={<BiLogOut />}
         >

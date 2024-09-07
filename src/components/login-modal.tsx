@@ -26,7 +26,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import signUpWithEmail from '@/actions/auth/signup-with-email';
-import { useAuth } from '@/context/auth-context';
+// import { useAuth } from '@/context/auth-context';
 import signInWithEmail from '@/actions/auth/signin-with-email';
 import Error from 'next/error';
 
@@ -50,7 +50,7 @@ const AuthModal = ({
     if (modal === 'login') setDimension((state) => ({ ...state, h: 510 }));
   }, [modal]);
 
-  const { isAuthenticated } = useAuth();
+  // const { isAuthenticated } = useAuth();
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -61,8 +61,8 @@ const AuthModal = ({
           animate={{ height: dimension.h }}
           className='relative overflow-hidden w-full rounded-lg'
         >
-          <SignInModal modal={modal} setModal={setModal} />
-          <SignUpModal modal={modal} setModal={setModal} />
+          <SignInBody modal={modal} setModal={setModal} onClose={onClose} />
+          <SignUpBody modal={modal} setModal={setModal} />
         </motion.div>
       </ModalContent>
     </Modal>
@@ -71,7 +71,7 @@ const AuthModal = ({
 
 export default AuthModal;
 
-const SignUpModal = ({
+const SignUpBody = ({
   modal,
   setModal,
 }: {
@@ -86,7 +86,7 @@ const SignUpModal = ({
     password: z.string().min(6, 'Password must be at least 6 characters long.'),
   });
 
-  const { setIsAuthenticated, setUser } = useAuth();
+  // const { setIsAuthenticated, setUser } = useAuth();
 
   const {
     register,
@@ -102,22 +102,24 @@ const SignUpModal = ({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await signUpWithEmail(values);
+      const user = await signUpWithEmail(values);
+      if (user) {
+        toast({
+          title: 'Confirm account in your email',
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
+        setModal('login');
+      }
     } catch (err) {
       toast({
-        title: 'Rate limit exceed',
+        title: 'Create account failed',
         status: 'error',
         duration: 5000,
         isClosable: true,
       });
     }
-    // const dataParsed = JSON.parse(data);
-    // console.log('data sign up', dataParsed);
-    // if (dataParsed.user) {
-    //   await signInWithEmail(values);
-    //   setIsAuthenticated(true);
-    //   setUser(dataParsed.user);
-    // }
   };
 
   return (
@@ -233,12 +235,14 @@ const SignUpModal = ({
   );
 };
 
-const SignInModal = ({
+const SignInBody = ({
   modal,
   setModal,
+  onClose,
 }: {
   modal: string;
   setModal: React.Dispatch<React.SetStateAction<string>>;
+  onClose: () => void;
 }) => {
   const { value: showPassword, toggle: toggleShowPassword } = useBoolean();
 
@@ -259,13 +263,33 @@ const SignInModal = ({
     },
   });
 
-  const { setIsAuthenticated } = useAuth();
+  // const { setIsAuthenticated } = useAuth();
+
+  const toast = useToast();
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const { data } = await signInWithEmail(values);
-    const dataParsed = JSON.parse(data);
-    console.log;
-    if (dataParsed.session?.access_token) setIsAuthenticated(true);
+    const { data: d, error: e } = await signInWithEmail(values);
+    const data = JSON.parse(d);
+    const error = JSON.parse(e);
+
+    if (data.session?.access_token) {
+      // setIsAuthenticated(true);
+      onClose();
+      toast({
+        title: 'Login Sucessfull',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    } else if (error) {
+      console.log(error);
+      toast({
+        title: "Invalid credentials or account don't exist",
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
     // else if (error) setIsAuthenticated(false);
   };
 

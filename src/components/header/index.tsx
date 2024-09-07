@@ -6,37 +6,42 @@ import LoginButton from './login-button';
 import { useDisclosure } from '@chakra-ui/react';
 import AuthModal from '../login-modal';
 import { Luckiest_Guy } from 'next/font/google';
-import useModalAuthStore from '@/zustand/modal-auth-store';
-import { useAuth } from '@/context/auth-context';
+// import { useAuth } from '@/context/auth-context';
 import { useEffect } from 'react';
 import { BiUser } from 'react-icons/bi';
 import { FaUserCircle } from 'react-icons/fa';
 import ProfileButton from './profile-button';
 import CreateRoomModal from '../create-room-modal';
-import useModalCreateRoomStore from '@/zustand/modal-create-room-store';
+import { useMountEffect } from '@/hooks/use-mount-effect';
+import { getUserData } from '@/actions/user/get-user-data';
+import { User } from '@/types/user';
 
 const luckiestGuy = Luckiest_Guy({ subsets: ['latin'], weight: ['400'] });
 
-const Header = () => {
+type Props = {
+  user: User | null;
+};
+
+const Header = ({ user }: Props) => {
+  const isMount = useMountEffect();
+
   const {
     isOpen: isOpenAuth,
     onClose: onCloseAuth,
     onOpen: onOpenAuth,
-  } = useModalAuthStore();
+  } = useDisclosure();
   const {
     isOpen: isOpenCreateRoom,
     onClose: onCloseCreateRoom,
     onOpen: onOpenCreateRoom,
-  } = useModalCreateRoomStore();
-  const { isAuthenticated, user, setIsAuthenticated } = useAuth();
+  } = useDisclosure();
+  // const { isAuthenticated, setIsAuthenticated } = useAuth();
 
-  useEffect(() => {
-    if (isAuthenticated) onCloseAuth();
-  }, [isAuthenticated]);
+  // useEffect(() => {
+  //   if (isAuthenticated) onCloseAuth();
+  // }, [isAuthenticated]);
 
-  console.log('is auth', isAuthenticated);
-
-  const deauthenticated = () => setIsAuthenticated(false);
+  if (!isMount) return null;
 
   return (
     <>
@@ -53,29 +58,25 @@ const Header = () => {
           <SearchRoom />
 
           <div className='hidden md:block'>
-            <CreateRoomButton onOpen={onOpenCreateRoom} />
+            <CreateRoomButton user={user} onOpen={onOpenCreateRoom} />
           </div>
         </div>
 
         <div className='mx-4 flex items-center'>
-          {!isAuthenticated ? (
-            <LoginButton
-              onClick={() => {
-                onOpenAuth();
-                console.log('click login');
-              }}
-            />
+          {!user ? (
+            <LoginButton onClick={() => onOpenAuth()} />
           ) : (
-            <ProfileButton
-              email={user?.email!}
-              deauthenticated={deauthenticated}
-            />
+            <ProfileButton nickname={user?.nickname} />
           )}
         </div>
       </div>
 
       <AuthModal isOpen={isOpenAuth} onClose={onCloseAuth} />
-      <CreateRoomModal isOpen={isOpenCreateRoom} onClose={onCloseCreateRoom} />
+      <CreateRoomModal
+        user={user}
+        isOpen={isOpenCreateRoom}
+        onClose={onCloseCreateRoom}
+      />
     </>
   );
 };

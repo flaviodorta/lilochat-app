@@ -1,15 +1,21 @@
-import { useAuth } from '@/context/auth-context';
+// import { useAuth } from '@/context/auth-context';
+import { User } from '@/types/user';
 import { Button, useToast } from '@chakra-ui/react';
 
-const CreateRoomButton = ({ onOpen }: { onOpen: () => void }) => {
-  const { isAuthenticated } = useAuth();
+const CreateRoomButton = ({
+  onOpen,
+  user,
+}: {
+  onOpen: () => void;
+  user: User | null;
+}) => {
   const toast = useToast();
 
   return (
     <button
       className='button'
       onClick={
-        isAuthenticated
+        user
           ? () => onOpen()
           : () =>
               toast({
