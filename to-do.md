@@ -11,4 +11,8 @@
 - atualizar o video, quando comecar um novo, pausado, ou seek
 - ajeitar initial load que nao abre o modal login
 - entrar para room botao
-- chat
+- profile modal com edit avatar url, nickname
+- virtualizacao de lista com infinity scroll
+- scroll ja no final na primeira renderizacao do chat
+- sync video
+- editar nome e automaticamente avatar icon

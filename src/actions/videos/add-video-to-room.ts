@@ -20,7 +20,7 @@ export const addVideoToRoom = async (
       {
         user_id: userId,
         room_id: roomId,
-        video_url: videoUrl,
+        video_url: videoUrl.trim(),
         video_id: videoId,
         title: videoData.title,
         description: videoData.description,

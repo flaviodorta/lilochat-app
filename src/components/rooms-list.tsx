@@ -5,16 +5,19 @@ import ReactPlayer from 'react-player';
 import { useRef, useCallback, useState } from 'react';
 import { Room } from '@/types/rooms';
 import Image from 'next/image';
-import { Spinner } from '@chakra-ui/react';
 import { FaUsers } from 'react-icons/fa6';
+import { PiUsersThreeFill } from 'react-icons/pi';
+import { useRouter } from 'next/navigation';
+import Spinner from './spinner';
+import supabaseCreateClient from '@/utils/supabase/supabase-client';
 
-const RoomsList = () => {
+const RoomsList = ({ userId }: { userId?: string }) => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, error } =
     useRooms();
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null); // Estado para controlar o hover
+  const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
+  const supabase = supabaseCreateClient();
 
-  // Função para observar o último elemento e carregar mais dados
   const lastRoomElementRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (isFetchingNextPage) return;
@@ -22,19 +25,39 @@ const RoomsList = () => {
 
       observerRef.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasNextPage) {
-          fetchNextPage(); // Carrega a próxima página quando o último item estiver visível
+          fetchNextPage();
         }
       });
 
-      if (node) observerRef.current.observe(node); // Começa a observar o último item
+      if (node) observerRef.current.observe(node);
     },
     [isFetchingNextPage, hasNextPage, fetchNextPage]
   );
 
+  const router = useRouter();
+
+  const handleJoinRoom = async (roomId: string, userId?: string) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ room_id: roomId })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Erro ao atualizar o room_id:', error);
+      } else {
+        console.log('Usuário atualizado com sucesso.');
+        router.push('/room/' + roomId);
+      }
+    } catch (error) {
+      console.error('Erro inesperado ao entrar na sala:', error);
+    }
+  };
+
   if (error) return <p>Erro ao carregar salas</p>;
 
   return (
-    <div className='w-3/4 grid grid-cols-1 xl:grid-cols-2 mt-[160px] gap-10'>
+    <div className='w-[90%] xl:w-3/4 grid grid-cols-1 xl:grid-cols-2 mt-[160px] gap-10'>
       {data?.pages.map((page, pageIndex) => (
         <div key={pageIndex}>
           {page.data.map((room: Room, index: number) => {
@@ -44,12 +67,12 @@ const RoomsList = () => {
 
             return (
               <div
-                key={index}
+                key={room.id}
                 className='flex min-w-[250px] gap-10 justify-center'
               >
                 <div
                   key={room.id}
-                  className='relative shadow-md mb-10 w-fit flex rounded-2xl overflow-hidden'
+                  className='relative shadow-md w-fit flex rounded-2xl overflow-hidden'
                   ref={isLastRoom ? lastRoomElementRef : null}
                 >
                   <div
@@ -65,7 +88,7 @@ const RoomsList = () => {
                     />
 
                     {hoveredRoomId === room.id && (
-                      <div className='absolute w-[350px] h-[250px]'>
+                      <div className='absolute w-full h-full'>
                         <ReactPlayer
                           url={room.video_url!}
                           playing={hoveredRoomId === room.id}
@@ -94,12 +117,17 @@ const RoomsList = () => {
                     <h2 className=''>{room.name}</h2>
 
                     <div className='flex justify-between'>
-                      <div className='flex items-center gap-2'>
-                        <FaUsers />
-                        <span>1/32</span>
+                      <div className='flex text-lg items-center gap-2'>
+                        <PiUsersThreeFill />
+                        <span className='text-ellipsis'>1/32</span>
                       </div>
 
-                      <button className='px-4 button w-fit'>Enter</button>
+                      <button
+                        className='px-4 button w-fit'
+                        onClick={() => handleJoinRoom(room.id, userId)}
+                      >
+                        Join
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -109,15 +137,7 @@ const RoomsList = () => {
         </div>
       ))}
 
-      {isFetchingNextPage && (
-        <Spinner
-          thickness='4px'
-          speed='0.65s'
-          emptyColor='purple.600'
-          color='purple.600'
-          size='xl'
-        />
-      )}
+      {isFetchingNextPage && <Spinner />}
     </div>
   );
 };

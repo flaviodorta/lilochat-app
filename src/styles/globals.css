@@ -6,4 +6,25 @@
   .button {
     @apply text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-purple-300 dark:focus:ring-purple-800 shadow-lg shadow-purple-500/50 dark:shadow-lg dark:shadow-purple-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center;
   }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #4b5563 #e5e7eb;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #e5e7eb; /* Cor do fundo */
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    /* background-color: #4b5563; */
+    border-radius: 9999px;
+    border: 2px solid #e5e7eb;
+
+    @apply bg-gray-600;
+  }
 }

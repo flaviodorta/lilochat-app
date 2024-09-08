@@ -15,7 +15,7 @@ export default async function Home() {
   return (
     <main className='flex bg-gray-50 min-h-screen flex-col items-center justify-between'>
       <Header user={user} />
-      <RoomsList />
+      <RoomsList userId={user?.id} />
     </main>
   );
 }
