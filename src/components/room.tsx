@@ -11,30 +11,11 @@ type Props = {
 };
 
 const Room = ({ roomId, userId }: Props) => {
-  // const [messages, setMessages] = useState<string[]>([]);
-  // const [newMessage, setNewMessage] = useState('');
   const [playing, setPlaying] = useState(false);
   const [videoTime, setVideoTime] = useState(0);
-  // const [usersCount, setUsersCount] = useState(0);
   const [users, setUsers] = useState<User[]>([]);
   const playerRef = useRef<ReactPlayer>(null!);
   const supabase = supabaseCreateClient();
-
-  // const sendMessage = async () => {
-  //   if (newMessage.trim()) {
-  //     const { error } = await supabase.from('messages').insert({
-  //       room_id: roomId,
-  //       user_id: userId,
-  //       content: newMessage,
-  //     });
-
-  //     if (!error) {
-  //       setNewMessage('');
-  //     } else {
-  //       console.log('error ao enviar mensagem');
-  //     }
-  //   }
-  // };
 
   const syncVideo = async (playing: boolean, time: number) => {
     await supabase

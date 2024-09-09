@@ -35,11 +35,6 @@ const Header = ({ user }: Props) => {
     onClose: onCloseCreateRoom,
     onOpen: onOpenCreateRoom,
   } = useDisclosure();
-  // const { isAuthenticated, setIsAuthenticated } = useAuth();
-
-  // useEffect(() => {
-  //   if (isAuthenticated) onCloseAuth();
-  // }, [isAuthenticated]);
 
   if (!isMount) return null;
 

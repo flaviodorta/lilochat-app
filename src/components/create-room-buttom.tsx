@@ -13,7 +13,7 @@ const CreateRoomButton = ({
 
   return (
     <button
-      className='button'
+      className='button-2 hover:shadow-lg py-2.5 px-4 text-white hover:-translate-y-[2px] transition-all durantion-100'
       onClick={
         user
           ? () => onOpen()

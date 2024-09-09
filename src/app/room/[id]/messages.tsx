@@ -38,11 +38,9 @@ const getColorFromString = (str: string) => {
     'text-sky-600',
     'text-fuchsia-600',
   ];
-
-  // Função hash simples que converte a string em um número
+  // @ts-ignore
   const hash = [...str].reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
-  // Usar o hash para selecionar uma cor da lista
   const colorIndex = hash % colors.length;
 
   return colors[colorIndex];
@@ -276,7 +274,6 @@ const Messages = ({ roomId, userId }: Props) => {
         <textarea
           ref={textareaRef}
           value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
           placeholder='Digite sua mensagem'
           onKeyUp={handleGlobalKeyPress}
           rows={3}

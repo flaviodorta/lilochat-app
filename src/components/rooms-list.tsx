@@ -10,6 +10,7 @@ import { PiUsersThreeFill } from 'react-icons/pi';
 import { useRouter } from 'next/navigation';
 import Spinner from './spinner';
 import supabaseCreateClient from '@/utils/supabase/supabase-client';
+import { useToast } from '@chakra-ui/react';
 
 const RoomsList = ({ userId }: { userId?: string }) => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, error } =
@@ -36,7 +37,16 @@ const RoomsList = ({ userId }: { userId?: string }) => {
 
   const router = useRouter();
 
+  const toast = useToast();
+
   const handleJoinRoom = async (roomId: string, userId?: string) => {
+    if (!userId) {
+      toast({
+        duration: 5000,
+        title: 'Log in to account first',
+        status: 'info',
+      });
+    }
     try {
       const { error } = await supabase
         .from('users')
@@ -123,7 +133,7 @@ const RoomsList = ({ userId }: { userId?: string }) => {
                       </div>
 
                       <button
-                        className='px-4 button w-fit'
+                        className='px-4 button-2 text-white py-2 w-fit'
                         onClick={() => handleJoinRoom(room.id, userId)}
                       >
                         Join

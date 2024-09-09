@@ -88,30 +88,30 @@ const CreateRoomModal = ({
       <ModalContent className='min-w-[300px] pb-6'>
         <ModalHeader className='text-center'>Create Room</ModalHeader>
         <ModalBody className='pb-6'>
-          <div className='flex flex-col gap-4'>
-            <div className='mb-4'>
-              <Text className='font-bold'>Room name</Text>
+          <div className='flex flex-col gap-6'>
+            <div className=''>
+              <Text className='font-bold'>Room title</Text>
               <Input
                 value={roomName}
                 onChange={(e) => setRoomName(e.target.value)}
               ></Input>
             </div>
 
-            <div className='mb-4'>
-              <Text className='font-bold'>First Youtube video URL</Text>
+            <div className=''>
+              <Text className='font-bold'>Youtube video link</Text>
               <Input
                 value={videoUrl}
                 onChange={(e) => setVideoUrl(e.target.value)}
               ></Input>
             </div>
+            <button
+              onClick={handleCreateRoom}
+              disabled={isLoading}
+              className='button-2 text-white w-full'
+            >
+              {isLoading ? 'Creating a room...' : 'Create a room'}
+            </button>
           </div>
-          <button
-            onClick={handleCreateRoom}
-            disabled={isLoading}
-            className='button w-full'
-          >
-            {isLoading ? 'Creating a room...' : 'Create a room'}
-          </button>
         </ModalBody>
       </ModalContent>
     </Modal>
