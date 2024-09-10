@@ -274,6 +274,7 @@ const Messages = ({ roomId, userId }: Props) => {
         <textarea
           ref={textareaRef}
           value={newMessage}
+          readOnly
           placeholder='Digite sua mensagem'
           rows={3}
           className='w-full p-2 border rounded-md mb-2 outline-none resize-none riws'

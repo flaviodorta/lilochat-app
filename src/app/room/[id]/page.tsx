@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import supabaseCreateClient from '@/utils/supabase/supabase-client';
 import { Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { getUserData } from '@/actions/user/get-user-data';
+import RoomPlayer from './player';
+import { getRoomData } from '@/actions/rooms/get-room-data';
 
 const RoomPage = async ({
   params,
@@ -16,6 +18,12 @@ const RoomPage = async ({
 
   if (!user) redirect('/');
 
+  const room = await getRoomData(params.id);
+
+  if (!room) redirect('/');
+
+  // console.log(room);
+
   return (
     <div className='flex flex-col w-full'>
       <div className='h-screen flex flex-col'>
@@ -24,10 +32,12 @@ const RoomPage = async ({
         </h1>
         <div className='h-full flex flex-col lg:flex-row'>
           <div className='w-full h-full lg:w-1/2'>
-            <div className='h-full lg:h-1/2 bg-red-500'></div>
+            <div className='h-full lg:h-1/2 bg-red-500'>
+              <RoomPlayer room={room} userId={params.id} />
+            </div>
             <div className='h-0 lg:h-1/2 bg-blue-500'></div>
           </div>
-          <div className='h-full w-full lg:w-1/2 lg:h-full'>
+          <div className='h-full lg:w-1/2 lg:h-full'>
             <Messages roomId={params.id} userId={user.id} />
           </div>
         </div>
