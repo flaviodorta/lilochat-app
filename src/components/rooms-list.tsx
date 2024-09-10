@@ -1,16 +1,9 @@
 'use client';
 
-import { useInfinityRoomsQuery } from '@/hooks/use-rooms';
-import ReactPlayer from 'react-player';
-import { useRef, useCallback, useState } from 'react';
+import { useInfinityRoomsQuery } from '@/hooks/use-infinity-rooms-query';
+import { useRef, useCallback } from 'react';
 import { Room } from '@/types/rooms';
-import Image from 'next/image';
-import { FaUsers } from 'react-icons/fa6';
-import { PiUsersThreeFill } from 'react-icons/pi';
-import { useRouter } from 'next/navigation';
 import Spinner from './spinner';
-import supabaseCreateClient from '@/utils/supabase/supabase-client';
-import { useToast } from '@chakra-ui/react';
 import RoomCard from './room-card';
 
 const RoomsList = ({ userId }: { userId?: string }) => {
@@ -36,11 +29,10 @@ const RoomsList = ({ userId }: { userId?: string }) => {
 
   if (error) return <p>Erro ao carregar salas</p>;
 
-  console.log(data);
+  // console.log(data);
 
   return (
-    // <div className='w-full'>
-    <div className='w-fit mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 mt-[160px] gap-8'>
+    <div className='w-full container mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 mt-[160px] gap-8'>
       {data?.pages.map((page, pageIndex) =>
         page.data.map((room: Room, index: number) => {
           const isLastRoom =
@@ -60,7 +52,6 @@ const RoomsList = ({ userId }: { userId?: string }) => {
 
       {isFetchingNextPage && <Spinner />}
     </div>
-    // </div>
   );
 };
 

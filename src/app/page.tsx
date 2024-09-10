@@ -13,7 +13,7 @@ export default async function Home() {
   }
 
   return (
-    <main className='flex bg-gray-50 px-2 md:px-4 xl:px-48 min-h-screen flex-col items-center justify-between'>
+    <main className='bg-neutral-50 mx-auto  lg:px-4 xl:px-36 min-h-screen'>
       <Header user={user} />
       <RoomsList userId={user?.id} />
     </main>

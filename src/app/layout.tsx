@@ -5,6 +5,7 @@ import Header from '@/components/header';
 import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClient } from '@tanstack/react-query';
 import { QueryProvider } from '@/providers/query-provider';
+import { cn } from '@/utils/cn';
 // import { AuthProvider } from '@/providers/auth-context';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -21,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en'>
-      <body className={inter.className}>
+      <body className={cn(['bg-neutral-50', inter.className])}>
         <QueryProvider>
           <ChakraProvider>
             {/* <Header /> */}

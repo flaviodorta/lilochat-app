@@ -40,7 +40,7 @@ const Header = ({ user }: Props) => {
 
   return (
     <>
-      <div className='fixed top-0 bg-gray-50 z-10 left-0 px-2 md:px-4 xl:px-48 w-full flex justify-between items-center h-24'>
+      <div className='fixed top-0 bg-gray-50 z-10 px-4 md:px-0 container left-1/2 -translate-x-1/2 w-full flex justify-between items-center h-24'>
         <div className='hidden md:block'>
           <div
             className={`text-4xl inline-block luckiest-guy-regular text-purple-600 ${luckiestGuy.className}`}
