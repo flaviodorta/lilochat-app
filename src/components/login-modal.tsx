@@ -182,7 +182,7 @@ const SignUpBody = ({
               )}
             </InputGroup>
 
-            <button type='submit' className='button-2' onClick={undefined}>
+            <button type='submit' className='button' onClick={undefined}>
               Sign Up
             </button>
 
@@ -361,7 +361,7 @@ const SignInBody = ({
               </div>
             </div>
 
-            <button type='submit' className='button-2' onClick={undefined}>
+            <button type='submit' className='button' onClick={undefined}>
               Sign In
             </button>
 

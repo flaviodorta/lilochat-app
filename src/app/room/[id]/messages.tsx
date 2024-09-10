@@ -179,20 +179,20 @@ const Messages = ({ roomId, userId }: Props) => {
           scrollToBottom();
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `room_id=eq.${roomId}`,
-        },
-        (payload: any) => {
-          console.log('new message');
-          setMessages(payload.new);
-          scrollToBottom();
-        }
-      )
+      // .on(
+      //   'postgres_changes',
+      //   {
+      //     event: 'UPDATE',
+      //     schema: 'public',
+      //     table: 'messages',
+      //     filter: `room_id=eq.${roomId}`,
+      //   },
+      //   (payload: any) => {
+      //     console.log('new message');
+      //     setMessages(payload.new);
+      //     scrollToBottom();
+      //   }
+      // )
       .subscribe();
 
     return () => {
