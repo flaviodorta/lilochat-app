@@ -11,6 +11,7 @@
 - scroll ja no final na primeira renderizacao do chat
 - sync video
 - add users numbers and room number to card room
+- room video player, tabs users lists and videos lists
 
 # done
 
