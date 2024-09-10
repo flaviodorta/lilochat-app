@@ -2,7 +2,7 @@
 
 const SearchRoom = () => {
   return (
-    <form className='max-w-lg w-full'>
+    <form className='lg:max-w-lg w-full'>
       <label
         htmlFor='search-room'
         className='mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white'

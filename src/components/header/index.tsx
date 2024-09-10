@@ -41,15 +41,15 @@ const Header = ({ user }: Props) => {
   return (
     <>
       <div className='fixed top-0 bg-gray-50 z-10 left-0 px-2 md:px-4 xl:px-48 w-full flex justify-between items-center h-24'>
-        <div className='hidden md:block mx-4'>
+        <div className='hidden md:block'>
           <div
-            className={`text-4xl inline-block luckiest-guy-regular text-purple-700 ${luckiestGuy.className}`}
+            className={`text-4xl inline-block luckiest-guy-regular text-purple-600 ${luckiestGuy.className}`}
           >
             lilochat
           </div>
         </div>
 
-        <div className='flex-1 items-center justify-center flex gap-8 mx-4'>
+        <div className='md:mx-4 flex-1 items-center justify-center flex gap-8'>
           <SearchRoom />
 
           <div className='hidden md:block'>
@@ -57,7 +57,7 @@ const Header = ({ user }: Props) => {
           </div>
         </div>
 
-        <div className='mx-4 flex items-center'>
+        <div className='ml-4 flex items-center justify-between'>
           {!user ? (
             <LoginButton onClick={() => onOpenAuth()} />
           ) : (

@@ -63,7 +63,7 @@ const Messages = ({ roomId, userId }: Props) => {
   useEffect(() => {
     if (isFirstRender) {
       setTimeout(() => {
-        scrollToBottom('auto'); // Muda para 'auto' para scroll instantâneo
+        scrollToBottom('auto');
       }, 100);
       setIsFirstRender(false);
     } else {
@@ -275,7 +275,6 @@ const Messages = ({ roomId, userId }: Props) => {
           ref={textareaRef}
           value={newMessage}
           placeholder='Digite sua mensagem'
-          onKeyUp={handleGlobalKeyPress}
           rows={3}
           className='w-full p-2 border rounded-md mb-2 outline-none resize-none riws'
         />

@@ -7,7 +7,7 @@ const getRooms = async ({ pageParam = 0 }) => {
   return data;
 };
 
-export const useRooms = () => {
+export const useInfinityRoomsQuery = () => {
   return useInfiniteQuery({
     queryKey: ['rooms'],
     queryFn: getRooms,

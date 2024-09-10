@@ -107,7 +107,7 @@ const CreateRoomModal = ({
             <button
               onClick={handleCreateRoom}
               disabled={isLoading}
-              className='button-2 text-white w-full'
+              className='button text-white w-full'
             >
               {isLoading ? 'Creating a room...' : 'Create a room'}
             </button>
