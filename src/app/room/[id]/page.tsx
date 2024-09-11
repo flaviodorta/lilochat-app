@@ -25,19 +25,19 @@ const RoomPage = async ({
   // console.log(room);
 
   return (
-    <div className='flex flex-col w-full'>
-      <div className='h-screen flex flex-col'>
+    <div className='flex flex-col w-full h-screen'>
+      <div className='h-full flex flex-col'>
         <h1 className='w-full h-6 bg-gray-100 p-4 flex items-center'>
           Room 2 {params.id}
         </h1>
-        <div className='h-full flex flex-col lg:flex-row'>
+        <div className='h-[calc(100vh-40px)] flex flex-col lg:flex-row'>
           <div className='w-full h-full lg:w-1/2'>
             <div className='h-full lg:h-1/2 bg-red-500'>
               <RoomPlayer room={room} userId={params.id} />
             </div>
             <div className='h-0 lg:h-1/2 bg-blue-500'></div>
           </div>
-          <div className='h-full lg:w-1/2 lg:h-full'>
+          <div className='h-1/2 lg:w-1/2 lg:h-full'>
             <Messages roomId={params.id} userId={user.id} />
           </div>
         </div>

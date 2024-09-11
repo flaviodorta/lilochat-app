@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import ReactPlayer from 'react-player';
 import supabaseCreateClient from '@/utils/supabase/supabase-client';
 import { Room } from '@/types/rooms';
+import { useMountEffect } from '@/hooks/use-mount-effect';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 type Props = {
   userId: string;
@@ -11,95 +13,97 @@ type Props = {
 };
 
 const RoomPlayer = ({ room, userId }: Props) => {
-  const [messages, setMessages] = useState<string[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [videoUrl, setVideoUrl] = useState(room.video_url);
-  const [playing, setPlaying] = useState(room.video_is_playing);
+  const [playing, setPlaying] = useState(true);
   const [videoTime, setVideoTime] = useState(room.video_time);
   const supabase = supabaseCreateClient();
   const playerRef = useRef<ReactPlayer>(null); // Referência ao player
+  const r = useRef<HTMLDivElement>(null!);
+  const isMount = useMountEffect();
+  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+
+  r.current?.click();
 
   useEffect(() => {
-    // Listener para sincronizar as mudanças no vídeo em tempo real
-    const syncListener = supabase
-      .channel('room-updates-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'rooms',
-          filter: `id=eq.${room.id}`,
-          // columns: ['video_time']
-        },
-        (payload: any) => {
-          console.log(payload);
-          setPlaying(payload.new.video_is_playing);
-          setVideoTime(payload.new.video_time);
-          setVideoUrl(payload.new.video_url);
+    console.log('playing state change', playing);
+  }, [playing]);
 
-          // Usar seekTo() para ajustar o tempo do vídeo
-          if (playerRef.current) {
-            playerRef.current.seekTo(payload.new.video_time, 'seconds');
-          }
-        }
-      )
-      .subscribe();
+  console.log('progress', videoTime);
 
+  const roomOne = supabase.channel(`room_${room.id}`);
+
+  roomOne
+    .on(
+      'broadcast',
+      {
+        event: 'video-status',
+      },
+      (state) => {
+        setPlaying(state.payload.playing);
+        setVideoTime(state.payload.time);
+        playerRef.current?.seekTo(state.payload.time);
+        console.log('Broadcast received:', state.payload);
+      }
+    )
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        setChannel(roomOne);
+      }
+    });
+
+  useEffect(() => {
     return () => {
-      supabase.removeChannel(syncListener);
+      supabase.removeChannel(roomOne);
     };
-  }, [room.id, supabase]);
+  }, [room, supabase]);
 
-  const handlePlay = async () => {
+  const sendPlay = () => {
+    if (!channel) return;
     setPlaying(true);
-    // Atualizar o estado do vídeo no banco
-    await supabase
-      .from('rooms')
-      .update({ video_is_playing: true })
-      .eq('id', room.id);
+    channel.send({
+      type: 'broadcast',
+      event: 'video-status',
+      payload: { playing: true, time: videoTime },
+    });
   };
 
-  const handlePause = async () => {
+  const sendPause = () => {
+    if (!channel) return;
     setPlaying(false);
-    const currentTime = playerRef.current
-      ? playerRef.current.getCurrentTime()
-      : 0;
-    console.log('pause at', currentTime);
-
-    // Atualizar o estado do vídeo e tempo no banco
-    const { error, data } = await supabase
-      .from('rooms')
-      .update({ video_is_playing: false, video_time: currentTime })
-      .eq('id', room.id);
-    console.log(error);
-    console.log(data);
+    channel.send({
+      type: 'broadcast',
+      event: 'video-status',
+      payload: { playing: false, time: videoTime },
+    });
   };
 
-  const handleSeek = async (time: number) => {
-    console.log('seek to', time);
-    // Atualizar o tempo de reprodução no banco
-    const { data, error } = await supabase
-      .from('rooms')
-      .update({ video_time: time })
-      .eq('id', room.id);
-    console.log(data);
-    console.log(error);
-  };
+  if (!isMount) return null;
 
   return (
-    <div className='w-full h-full flex items-center justify-center relative bg-neutral-50'>
+    <div
+      ref={r}
+      className='w-full h-full flex items-center justify-center relative bg-neutral-50'
+    >
       <ReactPlayer
-        ref={playerRef} // Referência ao player para controlar o tempo
+        ref={playerRef}
         playing={playing}
         url={videoUrl}
-        onPlay={handlePlay}
-        onPause={handlePause}
-        onSeek={handleSeek}
-        onProgress={({ playedSeconds }) => setVideoTime(playedSeconds)} // Atualiza o tempo conforme o progresso
+        // onPlay={sendPlay}
+        // onPause={sendPause}
+        onProgress={({ playedSeconds }) => setVideoTime(playedSeconds)}
         width={'100%'}
         height={'100%'}
+        controls={false}
       />
+      <div
+        className='absolute bg-red-600/10 left-0 top-0 w-full h-full'
+        onClick={() => {
+          if (playing) sendPause();
+          else sendPlay();
+        }}
+      >
+        click
+      </div>
     </div>
   );
 };

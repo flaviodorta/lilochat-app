@@ -49,7 +49,7 @@ const getColorFromString = (str: string) => {
 const Messages = ({ roomId, userId }: Props) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
-  const [userAvatarUrl, setUserAvatarUrl] = useState('');
+  // const [userAvatarUrl, setUserAvatarUrl] = useState('');
   const [userNickname, setUserNickname] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null!);
   const messagesEndRefs = useRef<HTMLDivElement>(null!);
@@ -100,7 +100,7 @@ const Messages = ({ roomId, userId }: Props) => {
     if (error) {
       console.log('Error ao buscar avatar do usuário', error);
     } else {
-      setUserAvatarUrl(data.avatar_url);
+      // setUserAvatarUrl(data.avatar_url);
       setUserNickname(data.nickname);
     }
   };
@@ -111,7 +111,7 @@ const Messages = ({ roomId, userId }: Props) => {
         room_id: roomId,
         user_id: userId,
         content: newMessage,
-        avatar_url: userAvatarUrl,
+        // avatar_url: userAvatarUrl,
         user_nickname: userNickname,
       });
 
@@ -152,7 +152,6 @@ const Messages = ({ roomId, userId }: Props) => {
     if (error) {
       console.log('Error ao buscar mensagens', messages);
     } else {
-      console.log(data);
       setIsLoadingMessages(false);
       setMessages(data);
     }
@@ -174,25 +173,10 @@ const Messages = ({ roomId, userId }: Props) => {
           filter: `room_id=eq.${roomId}`,
         },
         (payload: any) => {
-          console.log('new message');
           setMessages((prevMessages) => [...prevMessages, payload.new]);
           scrollToBottom();
         }
       )
-      // .on(
-      //   'postgres_changes',
-      //   {
-      //     event: 'UPDATE',
-      //     schema: 'public',
-      //     table: 'messages',
-      //     filter: `room_id=eq.${roomId}`,
-      //   },
-      //   (payload: any) => {
-      //     console.log('new message');
-      //     setMessages(payload.new);
-      //     scrollToBottom();
-      //   }
-      // )
       .subscribe();
 
     return () => {
@@ -208,14 +192,14 @@ const Messages = ({ roomId, userId }: Props) => {
 
     if (error) {
       console.error('Erro ao buscar usuários:', error);
-    } else {
-      console.log('Usuários na sala:', data);
     }
   };
 
   useEffect(() => {
     getUsers();
   }, []);
+
+  if (isFirstRender) return null;
 
   return (
     <div className='w-full p-4 h-full flex flex-col bg-gray-100'>
