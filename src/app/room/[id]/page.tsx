@@ -22,8 +22,6 @@ const RoomPage = async ({
 
   if (!room) redirect('/');
 
-  // console.log(room);
-
   return (
     <div className='flex flex-col w-full h-screen'>
       <div className='h-full flex flex-col'>
