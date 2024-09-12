@@ -23,13 +23,11 @@ const RoomPlayer = ({ room, userId }: Props) => {
   const isMount = useMountEffect();
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
-  // r.current?.click();
-
   useEffect(() => {
     console.log('playing state change', playing);
   }, [playing]);
 
-  console.log('progress', videoTime);
+  // console.log('progress', videoTime);
 
   const roomOne = supabase.channel(`room_${room.id}`);
 

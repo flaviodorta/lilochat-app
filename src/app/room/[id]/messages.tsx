@@ -4,14 +4,17 @@ import { Message } from '@/types/message';
 import supabaseCreateClient from '@/utils/supabase/supabase-client';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { FaUser } from 'react-icons/fa6';
+import { FaChessKing, FaUser } from 'react-icons/fa6';
 import { format } from 'date-fns';
 import Spinner from '@/components/spinner';
 import { cn } from '@/utils/cn';
+import { RiVipCrown2Fill } from 'react-icons/ri';
+import { Room } from '@/types/rooms';
+// import { useRouter } from 'next/router';
 
 type Props = {
   userId: string;
-  roomId: string;
+  room: Room;
 };
 
 const formatTime = (createdAt: string) => {
@@ -46,14 +49,21 @@ const getColorFromString = (str: string) => {
   return colors[colorIndex];
 };
 
-const Messages = ({ roomId, userId }: Props) => {
+const Messages = ({ room, userId }: Props) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   // const [userAvatarUrl, setUserAvatarUrl] = useState('');
   const [userNickname, setUserNickname] = useState('');
+  const [isFirstRender, setIsFirstRender] = useState(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+  // const [isKingRoom, setIsKingRoom] = useState(false);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null!);
   const messagesEndRefs = useRef<HTMLDivElement>(null!);
-  const [isFirstRender, setIsFirstRender] = useState(true);
+
+  const supabase = supabaseCreateClient();
+
+  // console.log('room', room);
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     if (messagesEndRefs.current)
@@ -88,27 +98,10 @@ const Messages = ({ roomId, userId }: Props) => {
     };
   }, []);
 
-  const supabase = supabaseCreateClient();
-
-  const getUserData = async () => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('avatar_url, nickname')
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      console.log('Error ao buscar avatar do usuário', error);
-    } else {
-      // setUserAvatarUrl(data.avatar_url);
-      setUserNickname(data.nickname);
-    }
-  };
-
   const sendMessage = async () => {
     if (newMessage.trim()) {
       const { error } = await supabase.from('messages').insert({
-        room_id: roomId,
+        room_id: room.id,
         user_id: userId,
         content: newMessage,
         // avatar_url: userAvatarUrl,
@@ -141,13 +134,26 @@ const Messages = ({ roomId, userId }: Props) => {
     };
   }, [newMessage]);
 
-  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+  const getUserData = async () => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('avatar_url, nickname')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.log('Error ao buscar avatar do usuário', error);
+    } else {
+      // setUserAvatarUrl(data.avatar_url);
+      setUserNickname(data.nickname);
+    }
+  };
 
   const getMessages = async () => {
     const { data, error } = await supabase
       .from('messages')
       .select('*')
-      .eq('room_id', roomId);
+      .eq('room_id', room.id);
 
     if (error) {
       console.log('Error ao buscar mensagens', messages);
@@ -156,6 +162,12 @@ const Messages = ({ roomId, userId }: Props) => {
       setMessages(data);
     }
   };
+  const [kingId, setKingId] = useState(room.user_id);
+
+  useEffect(() => {
+    console.log('king id', kingId);
+  }, [kingId]);
+  // receber as mensagens do banco de dados
 
   useEffect(() => {
     getUserData();
@@ -170,7 +182,7 @@ const Messages = ({ roomId, userId }: Props) => {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `room_id=eq.${roomId}`,
+          filter: `room_id=eq.${room.id}`,
         },
         (payload: any) => {
           setMessages((prevMessages) => [...prevMessages, payload.new]);
@@ -178,26 +190,128 @@ const Messages = ({ roomId, userId }: Props) => {
         }
       )
       .subscribe();
-
     return () => {
       supabase.removeChannel(messagesListener);
     };
   }, []);
 
-  const getUsers = async () => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('room_id', roomId);
+  useEffect(() => {
+    const kingIdListener = supabase
+      .channel('room-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rooms',
+          filter: `id=eq.${room.id}`,
+        },
+        (payload) => {
+          console.log('Mudança detectada no room', payload);
+          if (payload.new.user_id) {
+            setKingId(payload.new.user_id);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Subscrição ao canal de room:', status);
+      });
 
-    if (error) {
-      console.error('Erro ao buscar usuários:', error);
+    return () => {
+      supabase.removeChannel(kingIdListener);
+    };
+  }, [room.id]);
+
+  const removeUserFromRoom = async () => {
+    const { data, error: removeUserFromRoomError } = await supabase
+      .from('users')
+      .update({ room_id: null })
+      .eq('id', userId);
+
+    if (removeUserFromRoomError) {
+      console.log('Erro ao remover usuário da sala', removeUserFromRoomError);
+    }
+    console.log('Usuário removido da sala', data);
+  };
+
+  const addUserToRoom = async () => {
+    const { error: addUserToRoomError } = await supabase
+      .from('users')
+      .update({ room_id: room.id })
+      .eq('id', userId);
+
+    if (addUserToRoomError) {
+      console.log('Erro ao adicionar usuário da sala', addUserToRoomError);
     }
   };
 
   useEffect(() => {
-    getUsers();
+    addUserToRoom();
+
+    return () => {
+      removeUserFromRoom();
+    };
   }, []);
+
+  // const router = useRouter();
+
+  // const router = useRouter();
+  // useEffect(() => {
+  //   const handleRouteChange = () => {
+  //     removeUserFromRoom();
+  //   };
+
+  //   router.events.on('routeChangeStart', handleRouteChange);
+
+  //   return () => {
+  //     router.events.off('routeChangeStart', handleRouteChange);
+  //   };
+  // }, []);
+
+  // apenas teste
+  const getUsersInRoom = async () => {
+    const { count } = await supabase
+      .from('users')
+      .select('id', { count: 'exact' })
+      .eq('room_id', room.id);
+
+    console.log('Usuarios na sala', count);
+    console.log('is king room', kingId === userId);
+  };
+
+  const getKingRoomId = async () => {
+    const { data, error } = await supabase
+      .from('rooms')
+      .select('user_id')
+      .eq('id', room.id);
+
+    if (error) {
+    }
+    console.log('king room id', data);
+  };
+
+  const changeKingRoom = async () => {
+    try {
+      const { data, error: updateKingRoomError } = await supabase
+        .from('rooms')
+        .update({ user_id: userId }) // Valor hardcoded
+        .eq('id', room.id);
+
+      if (updateKingRoomError) {
+        console.error('Erro ao atualizar o dono da sala:', updateKingRoomError);
+        return;
+      }
+
+      console.log('Atualização do dono da sala bem-sucedida:', data);
+    } catch (error) {
+      console.error('Erro inesperado ao tentar mudar o dono da sala:', error);
+    }
+  };
+
+  // setar o user caso seja o dono da sala
+  // useEffect(() => {
+  //   if (room.user_id === userId) setIsKingRoom(true);
+  // }, []);
 
   if (isFirstRender) return null;
 
@@ -206,6 +320,15 @@ const Messages = ({ roomId, userId }: Props) => {
       <div className='pb-4 bg-gray-100 flex justify-between items-center'>
         <h1 className='text-xl font-bold'>Chat with strangers</h1>
       </div>
+      <button className='bg-red-600' onClick={getUsersInRoom}>
+        Click
+      </button>
+      <button className='bg-green-600' onClick={getKingRoomId}>
+        Click
+      </button>
+      <button className='bg-blue-600' onClick={changeKingRoom}>
+        Click
+      </button>
 
       <ul className='flex-1 w-full h-full justify-center rounded-lg overflow-y-scroll scrollbar-thin p-4 bg-white'>
         {isLoadingMessages ? (
@@ -240,6 +363,11 @@ const Messages = ({ roomId, userId }: Props) => {
                   >
                     {msg.user_nickname}
                   </span>
+                  {msg.user_id === kingId && (
+                    <span className='text-yellow-500 mr-auto -translate-y-[1px]'>
+                      <RiVipCrown2Fill />
+                    </span>
+                  )}
 
                   <span className='text-xs ml-auto'>
                     {formatTime(msg.created_at)}

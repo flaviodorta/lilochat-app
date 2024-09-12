@@ -50,7 +50,9 @@ const RoomsList = ({ userId }: { userId?: string }) => {
         })
       )}
 
-      {isFetchingNextPage && <Spinner />}
+      <div className='flex w-full h-full justify-center items-center'>
+        {isFetchingNextPage && <Spinner />}
+      </div>
     </div>
   );
 };

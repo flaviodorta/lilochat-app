@@ -47,7 +47,10 @@ const RoomsList = ({ userId }: { userId?: string }) => {
   if (error) return <p>Erro ao carregar salas</p>;
 
   return (
-    <div className='w-full h-[500px] overflow-y-auto' ref={parentRef}>
+    <div
+      className='w-full h-[500px] overflow-y-auto flex items-center justify-center'
+      ref={parentRef}
+    >
       <div
         style={{
           height: `${roomVirtualizer.getTotalSize()}px`,

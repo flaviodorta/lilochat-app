@@ -36,7 +36,7 @@ const RoomPage = async ({
             <div className='h-0 lg:h-1/2 bg-blue-500'></div>
           </div>
           <div className='h-1/2 lg:w-1/2 lg:h-full'>
-            <Messages roomId={params.id} userId={user.id} />
+            <Messages room={room} userId={user.id} />
           </div>
         </div>
       </div>
