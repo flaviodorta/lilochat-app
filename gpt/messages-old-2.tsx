@@ -54,14 +54,18 @@ const Messages = ({ room, userId }: Props) => {
   const [usersIds, setUsersIds] = useState<string[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
+  // const [userAvatarUrl, setUserAvatarUrl] = useState('');
   const [userNickname, setUserNickname] = useState('');
   const [isFirstRender, setIsFirstRender] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+  // const [isKingRoom, setIsKingRoom] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null!);
   const messagesEndRefs = useRef<HTMLDivElement>(null!);
 
   const supabase = supabaseCreateClient();
+
+  // console.log('room', room);
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     if (messagesEndRefs.current)
@@ -102,6 +106,7 @@ const Messages = ({ room, userId }: Props) => {
         room_id: room.id,
         user_id: userId,
         content: newMessage,
+        // avatar_url: userAvatarUrl,
         user_nickname: userNickname,
       });
 
@@ -131,6 +136,8 @@ const Messages = ({ room, userId }: Props) => {
     };
   }, [newMessage]);
 
+  // console.log('users room', usersIds);
+
   const getUsers = async () => {
     const { data, error } = await supabase
       .from('users')
@@ -156,6 +163,7 @@ const Messages = ({ room, userId }: Props) => {
     if (error) {
       console.log('Error ao buscar avatar do usuário', error);
     } else {
+      // setUserAvatarUrl(data.avatar_url);
       setUserNickname(data.nickname);
     }
   };
@@ -173,6 +181,12 @@ const Messages = ({ room, userId }: Props) => {
       setMessages(data);
     }
   };
+  const [kingId, setKingId] = useState(room.user_id);
+
+  useEffect(() => {
+    console.log('king id', kingId);
+  }, [kingId]);
+  // receber as mensagens do banco de dados
 
   useEffect(() => {
     getUsers();
@@ -203,75 +217,193 @@ const Messages = ({ room, userId }: Props) => {
     };
   }, []);
 
-  interface User {
-    user_id: string;
-    online_at: string;
-  }
-
-  const userStatus = {
-    user_id: userId,
-    online_at: new Date().toISOString(),
-  };
-
-  const [users, setUsers] = useState<User[]>([]);
-  const [kingRoomId, setKingRoomId] = useState('');
-  console.log('USERS', users);
-
   useEffect(() => {
-    const channel = supabase.channel('messages', {
-      config: {
-        presence: {
-          key: 'users',
+    const kingIdListener = supabase
+      .channel('room-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rooms',
+          filter: `id=eq.${room.id}`,
         },
-      },
-    });
-
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const newPresenceState = channel.presenceState();
-        const updatedUsers = Array.isArray(newPresenceState.users)
-          ? newPresenceState.users.map((user) => ({
-              // @ts-ignore
-              user_id: user.user_id,
-              // @ts-ignore
-              online_at: user.online_at,
-            }))
-          : [];
-        const sortByTime = updatedUsers
-          .filter((user) => user && user.user_id)
-          .sort((a, b) => a.online_at - b.online_at);
-
-        setKingRoomId(sortByTime.length > 0 ? sortByTime[0].user_id : '');
-
-        setUsers(sortByTime);
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('new presences', newPresences);
-        console.log('here');
-        setUsers((prevUsers) => [
-          ...prevUsers,
-          {
-            user_id: newPresences[0].user_id,
-            online_at: newPresences[0].online_at,
-          },
-        ]);
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        setUsers((prevUsers) =>
-          // @ts-ignore
-          prevUsers.filter((user) => user.user_id !== leftPresences.user_id)
-        );
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          const presenceTrackStatus = await channel.track(userStatus);
+        (payload) => {
+          console.log('Mudança detectada no room', payload);
+          if (payload.new.user_id) {
+            setKingId(payload.new.user_id);
+          }
         }
+      )
+      .subscribe((status) => {
+        console.log('Subscrição ao canal de room:', status);
       });
 
     return () => {
-      channel.untrack().then(() => {
-        channel.unsubscribe();
+      supabase.removeChannel(kingIdListener);
+    };
+  }, [room.id]);
+
+  const getUsersInRoom2 = async () => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('room_id', room.id);
+
+    if (error) {
+      console.log('Erro ao buscar usuários na sala:', error);
+      return [];
+    }
+
+    return data.map((user) => user.id);
+  };
+
+  const changeKingRoom2 = async () => {
+    // Atualiza os IDs de usuários na sala
+    const ids = await getUsersInRoom2();
+
+    console.log('ids', ids);
+
+    // Verifica se há IDs para escolher
+    if (ids.length === 0) {
+      console.log('Nenhum outro usuário na sala para se tornar o dono');
+      return;
+    }
+
+    // Escolhe um usuário aleatório
+    const randomIdx = Math.floor(Math.random() * ids.length);
+    const randomUserId = ids[randomIdx];
+
+    // console.log('Usuário escolhido para ser o novo dono:', randomUserId);
+
+    const { data, error } = await supabase
+      .from('rooms')
+      .update({ user_id: randomUserId })
+      .eq('id', room.id);
+
+    if (error) {
+      console.log('Erro ao mudar dono da sala:', error);
+    } else {
+      console.log('Novo dono da sala definido:', data);
+    }
+  };
+
+  const removeUserFromRoom = async () => {
+    const { data, error: removeUserFromRoomError } = await supabase
+      .from('users')
+      .update({ room_id: null })
+      .eq('id', userId);
+
+    if (removeUserFromRoomError) {
+      console.log('Erro ao remover usuário da sala', removeUserFromRoomError);
+      return;
+    }
+
+    // console.log('Usuário removido da sala:', data);
+
+    // Atualiza o dono da sala após remover o usuário
+    await changeKingRoom2();
+  };
+
+  const addUserToRoom = async () => {
+    const { error: addUserToRoomError } = await supabase
+      .from('users')
+      .update({ room_id: room.id })
+      .eq('id', userId);
+
+    if (addUserToRoomError) {
+      console.log('Erro ao adicionar usuário da sala', addUserToRoomError);
+    }
+  };
+
+  useEffect(() => {
+    addUserToRoom();
+
+    return () => {
+      removeUserFromRoom();
+    };
+  }, []);
+
+  // apenas teste
+  const getUsersInRoom = async () => {
+    const { count } = await supabase
+      .from('users')
+      .select('id', { count: 'exact' })
+      .eq('room_id', room.id);
+
+    // console.log('Usuarios na sala', count);
+    // console.log('is king room', kingId === userId);
+  };
+
+  const getKingRoomId = async () => {
+    const { data, error } = await supabase
+      .from('rooms')
+      .select('user_id')
+      .eq('id', room.id);
+
+    if (error) {
+    }
+    // console.log('king room id', data);
+  };
+
+  const changeKingRoom = async () => {
+    try {
+      const { data, error: updateKingRoomError } = await supabase
+        .from('rooms')
+        .update({ user_id: userId }) // Valor hardcoded
+        .eq('id', room.id);
+
+      if (updateKingRoomError) {
+        console.error('Erro ao atualizar o dono da sala:', updateKingRoomError);
+        return;
+      }
+
+      console.log('Atualização do dono da sala bem-sucedida:', data);
+    } catch (error) {
+      console.error('Erro inesperado ao tentar mudar o dono da sala:', error);
+    }
+  };
+
+  // setar o user caso seja o dono da sala
+  // useEffect(() => {
+  //   if (room.user_id === userId) setIsKingRoom(true);
+  // }, []);
+
+  const userStatus = {
+    id: userId,
+    online_at: new Date().toISOString(),
+  };
+
+  useEffect(() => {
+    const channel = supabase.channel('messages');
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const newState = channel.presenceState();
+        console.log('sync', newState);
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        console.log('join', key, newPresences);
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        console.log('leave', key, leftPresences);
+      })
+      .subscribe(async (status) => {
+        if (status !== 'SUBSCRIBED') {
+          return;
+        }
+
+        const presenceTrackStatus = await channel.track(userStatus);
+        console.log(presenceTrackStatus);
       });
+
+    () => {
+      const untrackPresence = async () => {
+        const presenceUntrackStatus = await channel.untrack();
+        console.log(presenceUntrackStatus);
+      };
+
+      untrackPresence();
     };
   }, []);
 
@@ -282,6 +414,15 @@ const Messages = ({ room, userId }: Props) => {
       <div className='pb-4 bg-gray-100 flex justify-between items-center'>
         <h1 className='text-xl font-bold'>Chat with strangers</h1>
       </div>
+      <button className='bg-red-600' onClick={getUsersInRoom}>
+        Click
+      </button>
+      <button className='bg-green-600' onClick={getKingRoomId}>
+        Click
+      </button>
+      <button className='bg-blue-600' onClick={changeKingRoom}>
+        Click
+      </button>
 
       <ul className='flex-1 w-full h-full justify-center rounded-lg overflow-y-scroll scrollbar-thin p-4 bg-white'>
         {isLoadingMessages ? (
@@ -316,7 +457,7 @@ const Messages = ({ room, userId }: Props) => {
                   >
                     {msg.user_nickname}
                   </span>
-                  {msg.user_id === kingRoomId && (
+                  {msg.user_id === kingId && (
                     <span className='text-yellow-500 mr-auto -translate-y-[1px]'>
                       <RiVipCrown2Fill />
                     </span>

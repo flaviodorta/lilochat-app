@@ -32,15 +32,57 @@ const RoomCard = ({ room, userId, lastRoomElementRef }: Props) => {
       });
     }
 
-    const { data: addUserToRoom, error: addUserToRoomError } = await supabase
-      .from('users')
-      .update({ room_id: roomId })
-      .eq('id', userId);
+    try {
+      // setar o dono da sala
+      const { data: usersInRoom, error: usersError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('room_id', roomId);
 
-    if (addUserToRoomError) {
-      console.error('Erro ao atualizar o room_id:', addUserToRoomError);
+      // console.log('users na sala', usersInRoom);
+
+      if (usersError) {
+        console.error('Erro ao verificar usuários na sala:', usersError);
+        return;
+      }
+
+      const usersCount = usersInRoom?.length || 0;
+
+      // console.log('users count', usersCount);
+      // console.log('user id', userId);
+
+      if (usersCount === 0) {
+        const { data: updateKingRoom, error: updateKingRoomError } =
+          await supabase
+            .from('rooms')
+            .update({ user_id: userId })
+            .eq('id', roomId);
+
+        // console.log('update king user', updateKingRoom);
+        // console.log('room id', roomId);
+
+        if (updateKingRoomError) {
+          console.error(
+            'Erro ao atualizar o dono da sala',
+            updateKingRoomError
+          );
+          return;
+        }
+        // console.log('Usuário se tornou o dono da sala', userId);
+      }
+
+      const { data: addUserToRoom, error: addUserToRoomError } = await supabase
+        .from('users')
+        .update({ room_id: roomId })
+        .eq('id', userId);
+
+      if (addUserToRoomError) {
+        console.error('Erro ao atualizar o room_id:', addUserToRoomError);
+      }
+      router.push('/room/' + roomId);
+    } catch (error) {
+      console.error('Erro inesperado ao entrar na sala:', error);
     }
-    router.push('/room/' + roomId);
   };
 
   return (

@@ -24,7 +24,7 @@ const RoomPlayer = ({ room, userId }: Props) => {
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
   useEffect(() => {
-    console.log('playing state change', playing);
+    // console.log('playing state change', playing);
   }, [playing]);
 
   // console.log('progress', videoTime);
