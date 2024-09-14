@@ -7,13 +7,18 @@ import { Room } from '@/types/rooms';
 import { useMountEffect } from '@/hooks/use-mount-effect';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { FaPause, FaPlay } from 'react-icons/fa6';
+import { User } from '@/types/user';
+import { useRoomStore } from '@/providers/room-provider';
+import { cn } from '@/utils/cn';
 
 type Props = {
-  userId: string;
+  user: User;
   room: Room;
 };
 
-const RoomPlayer = ({ room, userId }: Props) => {
+const Player = ({ room, user }: Props) => {
+  const { kingRoomId } = useRoomStore((state) => state);
+
   const [videoUrl, setVideoUrl] = useState(room.video_url);
   const [playing, setPlaying] = useState(true);
   const [videoTime, setVideoTime] = useState(room.video_time);
@@ -23,35 +28,83 @@ const RoomPlayer = ({ room, userId }: Props) => {
   const isMount = useMountEffect();
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
+  const isKingRoom = kingRoomId === user.id;
+
+  const userStatus = {
+    user_id: user.id,
+    playing,
+    videoTime,
+  };
+
+  // useEffect(() => {
+  //   const channel = supabase.channel('player', {
+  //     config: {
+  //       presence: {
+  //         key: 'users',
+  //       },
+  //     },
+  //   });
+  //   console.log('king room id fora', kingRoomId);
+  //   channel
+  //     .on('presence', { event: 'sync' }, () => {
+  //       const newPresenceState = channel.presenceState();
+  //       console.log('new presence state', newPresenceState);
+  //       console.log('king room id', kingRoomId);
+  //       const kingRoomState = Array.isArray(newPresenceState.users)
+  //         ? newPresenceState.users.filter(
+  //             (userState) => userState.user_id === kingRoomId
+  //           )[0]
+  //         : [];
+  //       console.log('king room state', kingRoomState);
+  //     })
+  //     .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+  //       console.log('new presences', newPresences);
+  //     })
+  //     .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+  //       // @ts-ignore
+  //     })
+  //     .subscribe(async (status) => {
+  //       if (status === 'SUBSCRIBED') {
+  //         const presenceTrackStatus = await channel.track(userStatus);
+  //       }
+  //     });
+
+  //   return () => {
+  //     channel.untrack().then(() => {
+  //       channel.unsubscribe();
+  //     });
+  //   };
+  // }, []);
+
   useEffect(() => {
     // console.log('playing state change', playing);
   }, [playing]);
 
-  const roomChannel = supabase.channel(`room_${room.id}`);
+  // const playerChannel = supabase.channel(`player_${room.id}`);
 
-  roomChannel
-    .on(
-      'broadcast',
-      {
-        event: 'video-status',
-      },
-      (state) => {
-        setPlaying(state.payload.playing);
-        setVideoTime(state.payload.time);
-        playerRef.current?.seekTo(state.payload.time);
-      }
-    )
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        setChannel(roomChannel);
-      }
-    });
+  // playerChannel
+  //   .on(
+  //     'broadcast',
+  //     {
+  //       event: 'video-status',
+  //     },
+  //     (state) => {
+  //       setPlaying(state.payload.playing);
+  //       setVideoTime(state.payload.time);
+  //       playerRef.current?.seekTo(state.payload.time);
+  //     }
+  //   )
+  //   .subscribe((status) => {
+  //     if (status === 'SUBSCRIBED') {
+  //       setChannel(playerChannel);
+  //     }
+  //   });
 
-  useEffect(() => {
-    return () => {
-      supabase.removeChannel(roomChannel);
-    };
-  }, [room, supabase]);
+  // useEffect(() => {
+  //   return () => {
+  //     supabase.removeChannel(playerChannel);
+  //   };
+  // }, [room, supabase]);
 
   const sendPlay = () => {
     if (!channel) return;
@@ -78,7 +131,10 @@ const RoomPlayer = ({ room, userId }: Props) => {
   return (
     <div
       ref={r}
-      className='group cursor-pointer w-full h-full flex items-center justify-center relative bg-neutral-50'
+      className={cn([
+        'group w-full h-full flex items-center justify-center relative bg-neutral-50',
+        isKingRoom && 'cursor-pointer',
+      ])}
     >
       <ReactPlayer
         ref={playerRef}
@@ -86,6 +142,7 @@ const RoomPlayer = ({ room, userId }: Props) => {
         url={videoUrl}
         // onPlay={sendPlay}
         // onPause={sendPause}
+        // onBuffer={}
         onProgress={({ playedSeconds }) => setVideoTime(playedSeconds)}
         width={'100%'}
         height={'100%'}
@@ -94,16 +151,18 @@ const RoomPlayer = ({ room, userId }: Props) => {
       <div
         className='absolute flex items-center justify-center bg-red-600/0 left-0 top-0 w-full h-full'
         onClick={() => {
-          if (playing) sendPause();
-          else sendPlay();
+          if (kingRoomId === user.id) {
+            if (playing) sendPause();
+            else sendPlay();
+          }
         }}
       >
         <span className='group-hover:block hidden text-6xl text-black/80'>
-          {playing ? <FaPause /> : <FaPlay />}
+          {!isKingRoom ? null : playing ? <FaPause /> : <FaPlay />}
         </span>
       </div>
     </div>
   );
 };
 
-export default RoomPlayer;
+export default Player;

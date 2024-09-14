@@ -12,47 +12,15 @@ import { RiVipCrown2Fill } from 'react-icons/ri';
 import { Room } from '@/types/rooms';
 import { User } from '@/types/user';
 import { useRoomStore } from '@/providers/room-provider';
+import { getColorFromString } from '@/utils/get-color-from-string';
+import { formatTime } from '@/utils/format-time';
 
 type Props = {
   user: User;
   room: Room;
 };
 
-const formatTime = (createdAt: string) => {
-  return format(new Date(createdAt), 'HH:mm'); // Exemplo de formato 12 horas
-};
-
-const getColorFromString = (str: string) => {
-  const colors = [
-    'text-red-600',
-    'text-blue-600',
-    'text-green-600',
-    'text-yellow-600',
-    'text-purple-600',
-    'text-pink-600',
-    'text-indigo-600',
-    'text-teal-600',
-    'text-orange-600',
-    'text-rose-600',
-    'text-violet-600',
-    'text-lime-600',
-    'text-amber-600',
-    'text-emerald-600',
-    'text-cyan-600',
-    'text-sky-600',
-    'text-fuchsia-600',
-  ];
-  // @ts-ignore
-  const hash = [...str].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-
-  const colorIndex = hash % colors.length;
-
-  return colors[colorIndex];
-};
-
 const Messages = ({ room, user }: Props) => {
-  // const { messages, isLoadingMessages, isFirstRender, kingRoomId } = useRoom();
-  // console.log('messages', messages);
   const {
     users,
     messages,
@@ -65,10 +33,7 @@ const Messages = ({ room, user }: Props) => {
     removeUser,
   } = useRoomStore((state) => state);
 
-  const [usersIds, setUsersIds] = useState<string[]>([]);
-  // const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
-  const [userNickname, setUserNickname] = useState(user.nickname);
   const [isFirstRender, setIsFirstRender] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
 
@@ -144,21 +109,6 @@ const Messages = ({ room, user }: Props) => {
     };
   }, [newMessage]);
 
-  const getUsers = async () => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('id')
-      .eq('room_id', room.id);
-
-    if (error) {
-      console.log('Error ao buscar usuarios');
-    }
-
-    if (data && data.length > 0) {
-      setUsersIds(data.map((user) => user.id));
-    }
-  };
-
   const getMessages = async () => {
     const { data, error } = await supabase
       .from('messages')
@@ -174,11 +124,8 @@ const Messages = ({ room, user }: Props) => {
   };
 
   useEffect(() => {
-    getUsers();
     getMessages();
     scrollToBottom();
-
-    // console.log(usersIds);
 
     const messagesListener = supabase
       .channel('messages-room-channel')
@@ -191,8 +138,6 @@ const Messages = ({ room, user }: Props) => {
           filter: `room_id=eq.${room.id}`,
         },
         (payload: any) => {
-          console.log('messages ', [...messages, payload.new]);
-          // setMessages([...messages, payload.new]);
           addMessage(payload.new);
           scrollToBottom();
         }
@@ -200,70 +145,6 @@ const Messages = ({ room, user }: Props) => {
       .subscribe();
     return () => {
       supabase.removeChannel(messagesListener);
-    };
-  }, []);
-
-  console.log('messages 2', messages);
-  console.log('users', users);
-  console.log('king room id', kingRoomId);
-
-  const userStatus = {
-    user_id: user.id,
-    nickname: user.nickname,
-    online_at: new Date().toISOString(),
-  };
-
-  useEffect(() => {
-    const channel = supabase.channel('messages', {
-      config: {
-        presence: {
-          key: 'users',
-        },
-      },
-    });
-
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const newPresenceState = channel.presenceState();
-        const updatedUsers = Array.isArray(newPresenceState.users)
-          ? newPresenceState.users.map((user) => ({
-              // @ts-ignore
-              user_id: user.user_id,
-              // @ts-ignore
-              nickname: user.nickname,
-              // @ts-ignore
-              online_at: user.online_at,
-            }))
-          : [];
-        const sortByTime = updatedUsers
-          .filter((user) => user && user.user_id)
-          .sort((a, b) => a.online_at - b.online_at);
-
-        setKingRoomId(sortByTime.length > 0 ? sortByTime[0].user_id : '');
-
-        setUsers(sortByTime);
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        addUser({
-          user_id: newPresences[0].user_id,
-          nickname: newPresences[0].nickname,
-          online_at: newPresences[0].online_at,
-        });
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        // @ts-ignore
-        removeUser(leftPresences.user_id);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          const presenceTrackStatus = await channel.track(userStatus);
-        }
-      });
-
-    return () => {
-      channel.untrack().then(() => {
-        channel.unsubscribe();
-      });
     };
   }, []);
 
