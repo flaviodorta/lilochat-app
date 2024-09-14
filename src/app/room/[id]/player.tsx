@@ -26,16 +26,8 @@ const Player = ({ room, user }: Props) => {
   const [videoTime, setVideoTime] = useState(0);
   const supabase = supabaseCreateClient();
   const playerRef = useRef<ReactPlayer>(null);
-  // const r = useRef<HTMLDivElement>(null!);
   const isMount = useMountEffect();
   const isKingRoom = kingRoomId === user.id;
-  const initDateRef = useRef(new Date());
-
-  // const userStatus = {
-  //   user_id: user.id,
-  //   playing,
-  //   videoTime,
-  // };
 
   useEffect(() => {
     console.log('playing state change', playing);
@@ -48,7 +40,7 @@ const Player = ({ room, user }: Props) => {
       .on(
         'broadcast',
         {
-          event: 'video-status',
+          event: 'king-video-status',
         },
         (state) => {
           setPlaying(state.payload.playing);
@@ -59,14 +51,21 @@ const Player = ({ room, user }: Props) => {
       .on(
         'broadcast',
         {
+          event: 'member-video-status',
+        },
+        (state) => {
+          setPlaying(state.payload.playing);
+          // setVideoTime(state.payload.time);
+          // playerRef.current?.seekTo(state.payload.time);
+        }
+      )
+      .on(
+        'broadcast',
+        {
           event: 'join-video-status',
         },
         (state) => {
           if (state.payload.user_id === user.id) {
-            console.log('recevied');
-            console.log('here');
-            console.log('state play', state.payload.playing);
-            console.log('playing', playing);
             setPlaying(state.payload.playing);
             setVideoTime(state.payload.time);
             playerRef.current?.seekTo(state.payload.time);
@@ -74,10 +73,8 @@ const Player = ({ room, user }: Props) => {
         }
       )
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('here');
         if (isKingRoom) {
           const newUserId = newPresences[0]?.user_id;
-          console.log('new user', newUserId);
 
           if (newUserId) {
             channel.send({
@@ -86,7 +83,7 @@ const Player = ({ room, user }: Props) => {
               payload: {
                 playing: playing,
                 time: playerRef.current?.getCurrentTime() || videoTime,
-                user_id: newUserId, // Identifica o novo usuário
+                user_id: newUserId,
               },
             });
           }
@@ -101,35 +98,61 @@ const Player = ({ room, user }: Props) => {
   const sendPlay = () => {
     if (!channel) return;
 
-    setTimeout(() => {
-      setPlaying(true);
-      const currentTime = playerRef.current?.getCurrentTime() || 0;
-      channel.send({
-        type: 'broadcast',
-        event: 'video-status',
-        payload: {
-          playing: true,
-          time: currentTime,
-        },
-      });
-    }, 600);
+    if (isKingRoom) {
+      setTimeout(() => {
+        setPlaying(true);
+        const currentTime = playerRef.current?.getCurrentTime() || 0;
+        channel.send({
+          type: 'broadcast',
+          event: 'king-video-status',
+          payload: {
+            playing: true,
+            time: currentTime,
+          },
+        });
+      }, 600);
+    } else {
+      setTimeout(() => {
+        setPlaying(true);
+        channel.send({
+          type: 'broadcast',
+          event: 'member-video-status',
+          payload: {
+            playing: true,
+          },
+        });
+      }, 600);
+    }
   };
 
   const sendPause = () => {
     if (!channel) return;
 
-    setTimeout(() => {
-      setPlaying(false);
-      const currentTime = playerRef.current?.getCurrentTime() || 0;
-      channel.send({
-        type: 'broadcast',
-        event: 'video-status',
-        payload: {
-          playing: false,
-          time: currentTime,
-        },
-      });
-    }, 600);
+    if (isKingRoom) {
+      setTimeout(() => {
+        setPlaying(false);
+        const currentTime = playerRef.current?.getCurrentTime() || 0;
+        channel.send({
+          type: 'broadcast',
+          event: 'king-video-status',
+          payload: {
+            playing: false,
+            time: currentTime,
+          },
+        });
+      }, 600);
+    } else {
+      setTimeout(() => {
+        setPlaying(false);
+        channel.send({
+          type: 'broadcast',
+          event: 'member-video-status',
+          payload: {
+            playing: false,
+          },
+        });
+      }, 600);
+    }
   };
 
   if (!isMount) return null;
@@ -137,58 +160,31 @@ const Player = ({ room, user }: Props) => {
   return (
     <div
       // ref={r}
-      className={cn([
-        'group w-full h-full flex items-center justify-center relative bg-neutral-50',
-        isKingRoom && 'cursor-pointer',
-      ])}
+      className='group w-full cursor-pointer h-full flex items-center justify-center relative bg-neutral-50'
     >
       <ReactPlayer
         ref={playerRef}
         playing={playing}
         url={videoUrl}
         onReady={handleReady}
-        muted={true} // Garantir que o vídeo seja reproduzido automaticamente
+        muted={false}
         onProgress={(state) => {
           console.log('played time', state);
           setVideoTime(state.playedSeconds);
         }}
-        onBufferEnd={() => {}}
         width={'100%'}
         height={'100%'}
-        controls={true}
+        controls={false}
       />
       <div
-        className={cn(
-          [
-            'absolute flex items-center justify-center bg-red-600/0 left-0 top-0 w-full h-full',
-          ],
-          isKingRoom && 'h-3/4'
-        )}
+        className='absolute flex items-center justify-center bg-red-600/0 left-0 top-0 w-full h-full'
         onClick={() => {
-          if (kingRoomId === user.id) {
-            if (playing) sendPause();
-            else sendPlay();
-          } else {
-            // if (playing) {
-            //   setPlaying(false);
-            //   initDateRef.current = new Date();
-            // } else {
-            //   setPlaying(true);
-            //   // playerRef.current?.seekTo(
-            //   //   videoTime +
-            //   //     (new Date().getTime() - initDateRef.current.getTime()) / 1000
-            //   // );
-            //   channel?.send({
-            //     type: 'broadcast',
-            //     event: 'sync-video-status',
-            //     payload: { user_id: user.id },
-            //   });
-            // }
-          }
+          if (playing) sendPause();
+          else sendPlay();
         }}
       >
         <span className='group-hover:block hidden text-6xl text-black/80'>
-          {!isKingRoom ? null : playing ? <FaPause /> : <FaPlay />}
+          {playing ? <FaPause /> : <FaPlay />}
         </span>
       </div>
     </div>
