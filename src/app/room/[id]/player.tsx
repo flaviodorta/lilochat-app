@@ -5,11 +5,9 @@ import ReactPlayer from 'react-player';
 import supabaseCreateClient from '@/utils/supabase/supabase-client';
 import { Room } from '@/types/rooms';
 import { useMountEffect } from '@/hooks/use-mount-effect';
-import { RealtimeChannel } from '@supabase/supabase-js';
 import { FaPause, FaPlay } from 'react-icons/fa6';
 import { User } from '@/types/user';
 import { useRoomStore } from '@/providers/room-provider';
-import { cn } from '@/utils/cn';
 import { useChannel } from '@/providers/channel-provider';
 
 type Props = {
@@ -22,10 +20,10 @@ const Player = ({ room, user }: Props) => {
   const { channel } = useChannel();
 
   const [videoUrl, setVideoUrl] = useState(room.video_url);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState<boolean | undefined>(undefined);
   const [videoTime, setVideoTime] = useState(0);
   const supabase = supabaseCreateClient();
-  const playerRef = useRef<ReactPlayer>(null);
+  const playerRef = useRef<ReactPlayer>(null!);
   const isMount = useMountEffect();
   const isKingRoom = kingRoomId === user.id;
 
@@ -55,8 +53,17 @@ const Player = ({ room, user }: Props) => {
         },
         (state) => {
           setPlaying(state.payload.playing);
-          // setVideoTime(state.payload.time);
-          // playerRef.current?.seekTo(state.payload.time);
+        }
+      )
+      .on(
+        'broadcast',
+        {
+          event: 'king-to-user-video-status',
+        },
+        (state) => {
+          setPlaying(state.payload.playing);
+          setVideoTime(state.payload.time);
+          playerRef.current?.seekTo(state.payload.time);
         }
       )
       .on(
@@ -65,24 +72,25 @@ const Player = ({ room, user }: Props) => {
           event: 'join-video-status',
         },
         (state) => {
+          console.log('join', state);
           if (state.payload.user_id === user.id) {
+            playerRef.current.seekTo(state.payload.time, 'seconds');
             setPlaying(state.payload.playing);
-            setVideoTime(state.payload.time);
-            playerRef.current?.seekTo(state.payload.time);
           }
         }
       )
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         if (isKingRoom) {
           const newUserId = newPresences[0]?.user_id;
-
+          console.log('current time', videoTime);
+          console.log('new presence', newPresences);
           if (newUserId) {
             channel.send({
               type: 'broadcast',
               event: 'join-video-status',
               payload: {
                 playing: playing,
-                time: playerRef.current?.getCurrentTime() || videoTime,
+                time: videoTime,
                 user_id: newUserId,
               },
             });
@@ -101,7 +109,7 @@ const Player = ({ room, user }: Props) => {
     if (isKingRoom) {
       setTimeout(() => {
         setPlaying(true);
-        const currentTime = playerRef.current?.getCurrentTime() || 0;
+        const currentTime = playerRef.current.getCurrentTime();
         channel.send({
           type: 'broadcast',
           event: 'king-video-status',
@@ -131,13 +139,13 @@ const Player = ({ room, user }: Props) => {
     if (isKingRoom) {
       setTimeout(() => {
         setPlaying(false);
-        const currentTime = playerRef.current?.getCurrentTime() || 0;
+        const currentTime = playerRef.current?.getCurrentTime();
         channel.send({
           type: 'broadcast',
           event: 'king-video-status',
           payload: {
             playing: false,
-            time: currentTime,
+            time: videoTime,
           },
         });
       }, 600);
@@ -155,13 +163,12 @@ const Player = ({ room, user }: Props) => {
     }
   };
 
+  console.log('playing', playing);
+
   if (!isMount) return null;
 
   return (
-    <div
-      // ref={r}
-      className='group w-full cursor-pointer h-full flex items-center justify-center relative bg-neutral-50'
-    >
+    <div className='group w-full cursor-pointer h-full flex items-center justify-center relative bg-neutral-50'>
       <ReactPlayer
         ref={playerRef}
         playing={playing}
@@ -170,7 +177,7 @@ const Player = ({ room, user }: Props) => {
         muted={false}
         onProgress={(state) => {
           console.log('played time', state);
-          setVideoTime(state.playedSeconds);
+          if (isKingRoom) setVideoTime(state.playedSeconds);
         }}
         width={'100%'}
         height={'100%'}

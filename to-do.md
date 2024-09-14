@@ -13,6 +13,8 @@
 - add users numbers and room number to card room
 - room video player, tabs users lists and videos lists
 - logs play/pause/join/change king room in messages
+- context api room channel
+- onBuffer to atualizar o tempo do video de acordo com
 
 # done
 
