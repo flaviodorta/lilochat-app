@@ -35,15 +35,15 @@ export const ChannelProvider = ({
     (state) => state
   );
 
-  const supabseChannel = supabase.channel(`room_${room.id}`, {
-    config: {
-      presence: {
-        key: 'users',
-      },
-    },
-  });
+  // const supabseChannel = supabase.channel(`room_${room.id}`, {
+  //   config: {
+  //     presence: {
+  //       key: 'users',
+  //     },
+  //   },
+  // });
 
-  const [channel, setChannel] = useState<RealtimeChannel>(supabseChannel);
+  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
   useEffect(() => {
     const userStatus = {
@@ -75,8 +75,16 @@ export const ChannelProvider = ({
           : [];
         const sortByTime = updatedUsers
           .filter((user) => user && user.user_id)
-          .sort((a, b) => a.online_at - b.online_at);
-        console.log(newPresenceState);
+          .sort((a, b) => {
+            if (a.online_at === b.online_at) {
+              // Em caso de empate no horário, ordene pelo user_id
+              return a.user_id.localeCompare(b.user_id);
+            }
+            return (
+              new Date(a.online_at).getTime() - new Date(b.online_at).getTime()
+            );
+          });
+        // console.log(newPresenceState);
 
         setKingRoomId(sortByTime.length > 0 ? sortByTime[0].user_id : '');
 
@@ -95,12 +103,11 @@ export const ChannelProvider = ({
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          const presenceTrackStatus = await channel.track(userStatus);
+          await channel.track(userStatus);
           setChannel(channel);
         }
       });
 
-    // setChannel(presenceChannel);
     return () => {
       channel.untrack().then(() => {
         channel.unsubscribe();
