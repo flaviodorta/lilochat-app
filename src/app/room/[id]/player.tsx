@@ -27,11 +27,9 @@ const RoomPlayer = ({ room, userId }: Props) => {
     // console.log('playing state change', playing);
   }, [playing]);
 
-  // console.log('progress', videoTime);
+  const roomChannel = supabase.channel(`room_${room.id}`);
 
-  const roomOne = supabase.channel(`room_${room.id}`);
-
-  roomOne
+  roomChannel
     .on(
       'broadcast',
       {
@@ -45,13 +43,13 @@ const RoomPlayer = ({ room, userId }: Props) => {
     )
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
-        setChannel(roomOne);
+        setChannel(roomChannel);
       }
     });
 
   useEffect(() => {
     return () => {
-      supabase.removeChannel(roomOne);
+      supabase.removeChannel(roomChannel);
     };
   }, [room, supabase]);
 

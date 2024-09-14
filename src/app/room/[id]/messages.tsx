@@ -11,10 +11,10 @@ import { cn } from '@/utils/cn';
 import { RiVipCrown2Fill } from 'react-icons/ri';
 import { Room } from '@/types/rooms';
 import { User } from '@/types/user';
-// import { useRouter } from 'next/router';
+import { useRoomStore } from '@/providers/room-provider';
 
 type Props = {
-  userId: string;
+  user: User;
   room: Room;
 };
 
@@ -50,11 +50,25 @@ const getColorFromString = (str: string) => {
   return colors[colorIndex];
 };
 
-const Messages = ({ room, userId }: Props) => {
+const Messages = ({ room, user }: Props) => {
+  // const { messages, isLoadingMessages, isFirstRender, kingRoomId } = useRoom();
+  // console.log('messages', messages);
+  const {
+    users,
+    messages,
+    kingRoomId,
+    setUsers,
+    setMessages,
+    setKingRoomId,
+    addMessage,
+    addUser,
+    removeUser,
+  } = useRoomStore((state) => state);
+
   const [usersIds, setUsersIds] = useState<string[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
+  // const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
-  const [userNickname, setUserNickname] = useState('');
+  const [userNickname, setUserNickname] = useState(user.nickname);
   const [isFirstRender, setIsFirstRender] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
 
@@ -100,9 +114,9 @@ const Messages = ({ room, userId }: Props) => {
     if (newMessage.trim()) {
       const { error } = await supabase.from('messages').insert({
         room_id: room.id,
-        user_id: userId,
+        user_id: user.id,
         content: newMessage,
-        user_nickname: userNickname,
+        user_nickname: user.nickname,
       });
 
       if (!error) {
@@ -117,7 +131,6 @@ const Messages = ({ room, userId }: Props) => {
     event: KeyboardEvent | React.KeyboardEvent<HTMLTextAreaElement>
   ) => {
     if (event.key === 'Enter' && !event.shiftKey) {
-      console.log('enter');
       event.preventDefault();
       await sendMessage();
     }
@@ -146,20 +159,6 @@ const Messages = ({ room, userId }: Props) => {
     }
   };
 
-  const getUserData = async () => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('avatar_url, nickname')
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      console.log('Error ao buscar avatar do usuário', error);
-    } else {
-      setUserNickname(data.nickname);
-    }
-  };
-
   const getMessages = async () => {
     const { data, error } = await supabase
       .from('messages')
@@ -176,7 +175,6 @@ const Messages = ({ room, userId }: Props) => {
 
   useEffect(() => {
     getUsers();
-    getUserData();
     getMessages();
     scrollToBottom();
 
@@ -193,7 +191,9 @@ const Messages = ({ room, userId }: Props) => {
           filter: `room_id=eq.${room.id}`,
         },
         (payload: any) => {
-          setMessages((prevMessages) => [...prevMessages, payload.new]);
+          console.log('messages ', [...messages, payload.new]);
+          // setMessages([...messages, payload.new]);
+          addMessage(payload.new);
           scrollToBottom();
         }
       )
@@ -203,19 +203,15 @@ const Messages = ({ room, userId }: Props) => {
     };
   }, []);
 
-  interface User {
-    user_id: string;
-    online_at: string;
-  }
+  console.log('messages 2', messages);
+  console.log('users', users);
+  console.log('king room id', kingRoomId);
 
   const userStatus = {
-    user_id: userId,
+    user_id: user.id,
+    nickname: user.nickname,
     online_at: new Date().toISOString(),
   };
-
-  const [users, setUsers] = useState<User[]>([]);
-  const [kingRoomId, setKingRoomId] = useState('');
-  console.log('USERS', users);
 
   useEffect(() => {
     const channel = supabase.channel('messages', {
@@ -234,6 +230,8 @@ const Messages = ({ room, userId }: Props) => {
               // @ts-ignore
               user_id: user.user_id,
               // @ts-ignore
+              nickname: user.nickname,
+              // @ts-ignore
               online_at: user.online_at,
             }))
           : [];
@@ -246,21 +244,15 @@ const Messages = ({ room, userId }: Props) => {
         setUsers(sortByTime);
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('new presences', newPresences);
-        console.log('here');
-        setUsers((prevUsers) => [
-          ...prevUsers,
-          {
-            user_id: newPresences[0].user_id,
-            online_at: newPresences[0].online_at,
-          },
-        ]);
+        addUser({
+          user_id: newPresences[0].user_id,
+          nickname: newPresences[0].nickname,
+          online_at: newPresences[0].online_at,
+        });
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        setUsers((prevUsers) =>
-          // @ts-ignore
-          prevUsers.filter((user) => user.user_id !== leftPresences.user_id)
-        );
+        // @ts-ignore
+        removeUser(leftPresences.user_id);
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -289,48 +281,50 @@ const Messages = ({ room, userId }: Props) => {
             <Spinner />
           </div>
         ) : (
-          messages.map((msg, index) => (
-            <li
-              key={index}
-              className='pb-4 overflow-hidden w-full flex items-start justify-between  bg-white'
-            >
-              <div className='flex w-full flex-col'>
-                <div className='pb-1 flex items-center w-full overflow-hidden gap-2'>
-                  <div className='font-bold '>
-                    {msg.user_nickname ? (
-                      <Image
-                        src={`https://api.multiavatar.com/${msg.user_nickname}.png?apikey=${process.env.NEXT_PUBLIC_YOUTUBE_API_KEY}`}
-                        width={24}
-                        height={24}
-                        alt='Avatar'
-                      />
-                    ) : (
-                      <FaUser />
-                    )}
-                  </div>
-                  <span
-                    className={cn([
-                      'text-sm font-bold text-purple-600 break-words',
-                      getColorFromString(msg.user_nickname),
-                    ])}
-                  >
-                    {msg.user_nickname}
-                  </span>
-                  {msg.user_id === kingRoomId && (
-                    <span className='text-yellow-500 mr-auto -translate-y-[1px]'>
-                      <RiVipCrown2Fill />
+          messages
+            .slice(messages.length - 200, messages.length)
+            .map((msg, index) => (
+              <li
+                key={index}
+                className='pb-4 overflow-hidden w-full flex items-start justify-between  bg-white'
+              >
+                <div className='flex w-full flex-col'>
+                  <div className='pb-1 flex items-center w-full overflow-hidden gap-2'>
+                    <div className='font-bold '>
+                      {msg.user_nickname ? (
+                        <Image
+                          src={`https://api.multiavatar.com/${msg.user_nickname}.png?apikey=${process.env.NEXT_PUBLIC_YOUTUBE_API_KEY}`}
+                          width={24}
+                          height={24}
+                          alt='Avatar'
+                        />
+                      ) : (
+                        <FaUser />
+                      )}
+                    </div>
+                    <span
+                      className={cn([
+                        'text-sm font-bold text-purple-600 break-words',
+                        getColorFromString(msg.user_nickname),
+                      ])}
+                    >
+                      {msg.user_nickname}
                     </span>
-                  )}
+                    {msg.user_id === kingRoomId && (
+                      <span className='text-yellow-500 mr-auto -translate-y-[1px]'>
+                        <RiVipCrown2Fill />
+                      </span>
+                    )}
 
-                  <span className='text-xs ml-auto'>
-                    {formatTime(msg.created_at)}
-                  </span>
+                    <span className='text-xs ml-auto'>
+                      {formatTime(msg.created_at)}
+                    </span>
+                  </div>
+
+                  <div className='w-full break-words'>{msg.content}</div>
                 </div>
-
-                <div className='w-full break-words'>{msg.content}</div>
-              </div>
-            </li>
-          ))
+              </li>
+            ))
         )}
         <div ref={messagesEndRefs} />
       </ul>
