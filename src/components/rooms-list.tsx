@@ -1,10 +1,11 @@
 'use client';
 
 import { useInfinityRoomsQuery } from '@/hooks/use-infinity-rooms-query';
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { Room } from '@/types/rooms';
 import Spinner from './spinner';
 import RoomCard from './room-card';
+import supabaseCreateClient from '@/utils/supabase/supabase-client';
 
 const RoomsList = ({ userId }: { userId?: string }) => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, error } =
@@ -26,6 +27,23 @@ const RoomsList = ({ userId }: { userId?: string }) => {
     },
     [isFetchingNextPage, hasNextPage, fetchNextPage]
   );
+
+  const supabase = supabaseCreateClient();
+
+  useEffect(() => {
+    const updateUserRoomId = async () => {
+      const { data: addUserToRoom, error: addUserToRoomError } = await supabase
+        .from('users')
+        .update({ room_id: null })
+        .eq('id', userId);
+
+      if (addUserToRoomError) {
+        console.error('Erro ao atualizar o room_id:', addUserToRoomError);
+      }
+    };
+
+    updateUserRoomId();
+  }, []);
 
   if (error) return <p>Erro ao carregar salas</p>;
 

@@ -128,7 +128,7 @@ const Messages = ({ room, user }: Props) => {
     scrollToBottom();
 
     const messagesListener = supabase
-      .channel('messages-room-channel')
+      .channel(`messages-room-channel-${room.id}`)
       .on(
         'postgres_changes',
         {
@@ -145,6 +145,25 @@ const Messages = ({ room, user }: Props) => {
       .subscribe();
     return () => {
       supabase.removeChannel(messagesListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    const updateUserRoomId = async (roomId: string | null) => {
+      const { error: addUserToRoomError } = await supabase
+        .from('users')
+        .update({ room_id: roomId })
+        .eq('id', user.id);
+
+      if (addUserToRoomError) {
+        console.error('Erro ao atualizar o room_id:', addUserToRoomError);
+      }
+    };
+
+    updateUserRoomId(room.id);
+
+    return () => {
+      updateUserRoomId(null);
     };
   }, []);
 

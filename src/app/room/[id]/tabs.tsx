@@ -8,14 +8,18 @@ import { Video } from '@/types/video';
 import { getVideoData } from '@/actions/videos/get-video-data';
 import Image from 'next/image';
 import { User } from '@/types/user';
+import { useChannel } from '@/providers/channel-provider';
+import { useRoomStore } from '@/providers/room-provider';
 
 type Props = {
   room: Room;
 };
 
 const RoomTabs = ({ room }: Props) => {
+  const { channel } = useChannel();
+  const { users } = useRoomStore((state) => state);
   const [videos, setVideos] = useState<Video[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  // const [users, setUsers] = useState<User[]>([]);
 
   const supabase = supabaseCreateClient();
 
@@ -30,19 +34,19 @@ const RoomTabs = ({ room }: Props) => {
     }
   };
 
-  const getUsers = async () => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('room_id', room.id);
-    // .eq('room_id', room.id);
+  // const getUsers = async () => {
+  //   const { data, error } = await supabase
+  //     .from('users')
+  //     .select('*')
+  //     .eq('room_id', room.id);
+  //   // .eq('room_id', room.id);
 
-    if (error) {
-      console.log('Error ao buscar videos', error);
-    } else {
-      setUsers(data);
-    }
-  };
+  //   if (error) {
+  //     console.log('Error ao buscar videos', error);
+  //   } else {
+  //     setUsers(data);
+  //   }
+  // };
 
   useEffect(() => {
     console.log('videos', videos);
@@ -51,8 +55,35 @@ const RoomTabs = ({ room }: Props) => {
 
   useEffect(() => {
     getVideos();
-    getUsers();
+    // getUsers();
   }, []);
+
+  // useEffect(() => {
+  //   // if (!channel) return;
+
+  //   const usersInRoomListener = supabase.channel('users_room').on(
+  //     'postgres_changes',
+  //     {
+  //       event: 'UPDATE',
+  //       schema: 'public',
+  //       table: 'users',
+  //       filter: `room_id=eq.${room.id}`,
+  //     },
+  //     (payload) => {
+  //       const updatedUser = payload.new;
+
+  //       if (updatedUser.room_id === null) {
+  //         setUsers((prevUsers) =>
+  //           prevUsers.filter((user) => user.id !== updatedUser.id)
+  //         );
+  //       }
+  //     }
+  //   );
+
+  //   return () => {
+  //     supabase.removeChannel(usersInRoomListener);
+  //   };
+  // }, []);
 
   return (
     <div className='hidden lg:flex h-fit w-full lg:h-1/2 flex-col pt-4 pl-4 pb-4 bg-gray-100'>
@@ -87,8 +118,8 @@ const RoomTabs = ({ room }: Props) => {
 
           <TabPanel className='h-full w-full'>
             <ul className='w-full flex-col overflow-y-auto scrollbar-thin flex gap-4'>
-              {users.map((user) => (
-                <div key={user.id} className='flex gap-4 items-center'>
+              {users.map((user, idx) => (
+                <div key={idx} className='flex gap-4 items-center'>
                   <Image
                     src={`https://api.multiavatar.com/${user.nickname}.png?apikey=${process.env.NEXT_PUBLIC_YOUTUBE_API_KEY}`}
                     width={24}
