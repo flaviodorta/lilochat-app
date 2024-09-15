@@ -58,22 +58,22 @@ const Messages = ({ room, user }: Props) => {
     }
   }, [messages]);
 
+  const handleGlobalKeyPress = async (
+    event: KeyboardEvent | React.KeyboardEvent<HTMLTextAreaElement>
+  ) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      await sendMessage();
+    }
+  };
+
   useEffect(() => {
-    const handleFirstKeyPress = (event: KeyboardEvent) => {
-      if (!textareaRef.current) return;
-
-      if (event.key.length === 1) {
-        textareaRef.current.focus();
-        setNewMessage((prev) => prev + event.key);
-      }
-    };
-
-    window.addEventListener('keydown', handleFirstKeyPress);
+    window.addEventListener('keydown', handleGlobalKeyPress);
 
     return () => {
-      window.removeEventListener('keydown', handleFirstKeyPress);
+      window.removeEventListener('keydown', handleGlobalKeyPress);
     };
-  }, []);
+  }, [newMessage]);
 
   const sendMessage = async () => {
     if (newMessage.trim()) {
@@ -91,23 +91,6 @@ const Messages = ({ room, user }: Props) => {
       }
     }
   };
-
-  const handleGlobalKeyPress = async (
-    event: KeyboardEvent | React.KeyboardEvent<HTMLTextAreaElement>
-  ) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      await sendMessage();
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleGlobalKeyPress);
-
-    return () => {
-      window.removeEventListener('keydown', handleGlobalKeyPress);
-    };
-  }, [newMessage]);
 
   const getMessages = async () => {
     const { data, error } = await supabase
@@ -233,8 +216,8 @@ const Messages = ({ room, user }: Props) => {
         <textarea
           ref={textareaRef}
           value={newMessage}
-          readOnly
           placeholder='Digite sua mensagem'
+          onChange={(e) => setNewMessage(e.target.value)}
           rows={3}
           className='w-full p-2 border rounded-md mb-2 outline-none resize-none riws'
         />
