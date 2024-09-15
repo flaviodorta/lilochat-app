@@ -72,7 +72,6 @@ const RoomTabs = ({ room, user }: Props) => {
           filter: `room_id=eq.${room.id}`,
         },
         (payload: any) => {
-          console.log('video new', payload.new);
           setVideos((prevVideos) => [...prevVideos, payload.new]);
         }
       )
@@ -124,7 +123,7 @@ const RoomTabs = ({ room, user }: Props) => {
         >
           <TabList className='sticky top-0 bg-white z-10'>
             <Tab>Videos</Tab>
-            <Tab>Users</Tab>
+            <Tab>Strangers</Tab>
           </TabList>
           <TabPanels className='w-full flex-grow'>
             <TabPanel className='flex-grow w-full'>

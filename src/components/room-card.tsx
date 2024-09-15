@@ -4,7 +4,7 @@ import { useToast } from '@chakra-ui/react';
 import { createBrowserClient } from '@supabase/ssr';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FaUser, FaUsers } from 'react-icons/fa6';
 import { PiUsersThreeFill } from 'react-icons/pi';
 import ReactPlayer from 'react-player';
@@ -18,6 +18,9 @@ type Props = {
 
 const RoomCard = ({ room, userId, lastRoomElementRef }: Props) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [videoThumbnailUrl, setVideoThumbnailUrl] = useState(
+    room.video_thumbnail_url
+  );
   const router = useRouter();
   const toast = useToast();
 
@@ -43,6 +46,27 @@ const RoomCard = ({ room, userId, lastRoomElementRef }: Props) => {
     router.push('/room/' + roomId);
   };
 
+  useEffect(() => {
+    const thumbnailCardListener = supabase
+      .channel(`thumbnail-room-card-${room.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rooms',
+          filter: `id=eq.${room.id}`,
+        },
+        (payload: any) => {
+          setVideoThumbnailUrl(payload.new.video_thumbnail_url);
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(thumbnailCardListener);
+    };
+  }, []);
+
   return (
     <div
       ref={lastRoomElementRef}
@@ -56,7 +80,7 @@ const RoomCard = ({ room, userId, lastRoomElementRef }: Props) => {
           alt='image'
           width={300}
           height={200}
-          src={room.video_thumbnail_url}
+          src={videoThumbnailUrl}
           className='border-l border-l-purple-600'
         />
 
