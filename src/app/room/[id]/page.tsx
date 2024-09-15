@@ -39,7 +39,7 @@ const RoomPage = async ({
                   <Player room={room} user={user} />
                 </div>
                 {/* <div className='h-0 lg:h-1/2 bg-blue-500'> */}
-                <RoomTabs room={room}></RoomTabs>
+                <RoomTabs room={room} user={user}></RoomTabs>
                 {/* </div> */}
               </div>
               <div className='h-1/2 lg:w-1/2 lg:h-full'>

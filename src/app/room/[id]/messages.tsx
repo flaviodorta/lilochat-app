@@ -128,7 +128,7 @@ const Messages = ({ room, user }: Props) => {
     scrollToBottom();
 
     const messagesListener = supabase
-      .channel(`messages-room-channel-${room.id}`)
+      .channel(`messages-room-${room.id}`)
       .on(
         'postgres_changes',
         {

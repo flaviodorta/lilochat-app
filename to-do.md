@@ -14,6 +14,7 @@
 - room video player, tabs users lists and videos lists
 - logs play/pause/join/change king room in messages
 - onBuffer to atualizar o tempo do video de acordo com
+- fix input message
 
 # done
 

@@ -48,8 +48,6 @@ const RoomsList = ({ userId }: { userId?: string }) => {
 
   if (error) return <p>Erro ao carregar salas</p>;
 
-  // console.log(data);
-
   return (
     <div className='w-full container mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 mt-[160px] gap-8'>
       {data?.pages.map((page, pageIndex) =>
