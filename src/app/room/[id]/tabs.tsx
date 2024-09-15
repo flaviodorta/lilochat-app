@@ -79,11 +79,12 @@ const RoomTabs = ({ room }: Props) => {
                   <p>{video.title}</p>
                 </div>
               ))}
-              <button className='hover:text-purple-600'>
+              <button className='hover:text-purple-600 font-bold'>
                 + Add more videos
               </button>
             </ul>
           </TabPanel>
+
           <TabPanel className='h-full w-full'>
             <ul className='w-full flex-col overflow-y-auto scrollbar-thin flex gap-4'>
               {users.map((user) => (

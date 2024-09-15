@@ -1,3 +1,5 @@
+import { MutableRefObject } from 'react';
+import ReactPlayer from 'react-player';
 import { createStore } from 'zustand/vanilla';
 
 export interface User {
@@ -25,6 +27,9 @@ type RoomState = {
   users: User[];
   kingRoomId: string;
   messages: RoomMessage[];
+  playerRef: ReactPlayer | null;
+  playing: boolean;
+  videoUrl: string;
 };
 
 type RoomActions = {
@@ -34,18 +39,31 @@ type RoomActions = {
   setKingRoomId: (id: string) => void;
   addMessage: (message: RoomMessage) => void;
   setMessages: (messages: RoomMessage[]) => void;
+  setPlayerRef: (ref: ReactPlayer | null) => void;
+  setPlaying: (playing: boolean) => void;
+  setVideoUrl: (url: string) => void;
 };
 
 export type RoomStore = RoomState & RoomActions;
 
 export const initRoomStore = (): RoomState => {
-  return { users: [], messages: [], kingRoomId: '' };
+  return {
+    users: [],
+    messages: [],
+    kingRoomId: '',
+    playing: false,
+    videoUrl: '',
+    playerRef: null,
+  };
 };
 
 const defaultInitStore: RoomState = {
   users: [],
   kingRoomId: '',
   messages: [],
+  playing: false,
+  videoUrl: '',
+  playerRef: null,
 };
 
 export const createRoomStore = (initState: RoomState = defaultInitStore) => {
@@ -54,20 +72,23 @@ export const createRoomStore = (initState: RoomState = defaultInitStore) => {
     setUsers: (users) => set({ users }),
     addUser: (user) => {
       set((state) => ({
-        users: [...state.users, user], // Garantindo imutabilidade
+        users: [...state.users, user],
       }));
     },
     removeUser: (user_id) => {
       set((state) => ({
-        users: state.users.filter((u) => u.user_id !== user_id), // Removendo usuário de forma imutável
+        users: state.users.filter((u) => u.user_id !== user_id),
       }));
     },
     setKingRoomId: (id) => set({ kingRoomId: id }),
     setMessages: (messages) => set({ messages }),
     addMessage: (message) => {
       set((state) => ({
-        messages: [...state.messages, message], // Garantindo imutabilidade
+        messages: [...state.messages, message],
       }));
     },
+    setPlayerRef: (ref) => set({ playerRef: ref }),
+    setPlaying: (playing) => set({ playing }),
+    setVideoUrl: (url) => set({ videoUrl: url }),
   }));
 };

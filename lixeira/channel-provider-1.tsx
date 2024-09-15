@@ -59,56 +59,6 @@ export const ChannelProvider = ({
   useEffect(() => {
     if (!playerRef || !channel) return;
 
-    channel
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        addUser({
-          user_id: newPresences[0].user_id,
-          nickname: newPresences[0].nickname,
-          online_at: newPresences[0].online_at,
-        });
-
-        if (isKingRoom) {
-          const newUserId = newPresences[0]?.user_id;
-          const currentTime = playerRef.getCurrentTime() || 0;
-
-          if (newUserId) {
-            channel.send({
-              type: 'broadcast',
-              event: 'join-video-status',
-              payload: {
-                playing: playing,
-                time: currentTime,
-                user_id: newUserId,
-              },
-            });
-          }
-        }
-      })
-      .on(
-        'broadcast',
-        {
-          event: 'member-video-status',
-        },
-        (state) => {
-          if (isKingRoom) {
-            setPlaying(state.payload.playing);
-            const currentTime = playerRef.getCurrentTime();
-            channel.send({
-              type: 'broadcast',
-              event: 'king-video-status',
-              payload: {
-                playing: state.payload.playing,
-                time: currentTime,
-              },
-            });
-          }
-        }
-      );
-  }, [channel, playerRef, kingRoomId]);
-
-  useEffect(() => {
-    if (!playerRef || !channel) return;
-
     const userStatus = {
       user_id: user.id,
       nickname: user.nickname,
@@ -139,14 +89,45 @@ export const ChannelProvider = ({
               new Date(a.online_at).getTime() - new Date(b.online_at).getTime()
             );
           });
+        console.log(newPresenceState);
 
         setKingRoomId(sortByTime.length > 0 ? sortByTime[0].user_id : '');
 
         setUsers(sortByTime);
       })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        addUser({
+          user_id: newPresences[0].user_id,
+          nickname: newPresences[0].nickname,
+          online_at: newPresences[0].online_at,
+        });
+
+        console.log('new presence', newPresences);
+        console.log('is king room', isKingRoom);
+
+        if (isKingRoom) {
+          const newUserId = newPresences[0]?.user_id;
+          const currentTime = playerRef.getCurrentTime() || 0;
+
+          if (newUserId) {
+            // setTimeout(() => {
+            channel.send({
+              type: 'broadcast',
+              event: 'join-video-status',
+              payload: {
+                playing: playing,
+                time: currentTime,
+                user_id: newUserId,
+              },
+            });
+            // }, 2000);
+          }
+        }
+      })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
         // @ts-ignore
         removeUser(leftPresences.user_id);
+        console.log('left presence', leftPresences);
       })
       .on(
         'broadcast',
@@ -156,6 +137,29 @@ export const ChannelProvider = ({
         (state) => {
           setPlaying(state.payload.playing);
           playerRef.seekTo(state.payload.time);
+          console.log('hking-video-status');
+        }
+      )
+      .on(
+        'broadcast',
+        {
+          event: 'member-video-status',
+        },
+        (state) => {
+          console.log('member-video-status');
+          if (isKingRoom) {
+            console.log('here king');
+            setPlaying(state.payload.playing);
+            const currentTime = playerRef.getCurrentTime();
+            channel.send({
+              type: 'broadcast',
+              event: 'king-video-status',
+              payload: {
+                playing: state.payload.playing,
+                time: currentTime,
+              },
+            });
+          }
         }
       )
       .on(
@@ -165,8 +169,12 @@ export const ChannelProvider = ({
         },
         (state) => {
           if (state.payload.user_id === user.id) {
+            console.log('state time', state.payload.time);
+            console.log('playing', state.payload.playing);
             playerRef.seekTo(state.payload.time, 'seconds');
+            // setTimeout(() => {
             setPlaying(state.payload.playing);
+            // }, 2000);
           }
         }
       )
@@ -174,6 +182,7 @@ export const ChannelProvider = ({
         if (status === 'SUBSCRIBED') {
           await channel.track(userStatus);
           if (!channel) setChannel(channel);
+          console.log('channel', channel);
         }
       });
 
