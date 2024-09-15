@@ -9,6 +9,7 @@ import { FaPause, FaPlay } from 'react-icons/fa6';
 import { User } from '@/types/user';
 import { useRoomStore } from '@/providers/room-provider';
 import { useChannel } from '@/providers/channel-provider';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   user: User;
@@ -20,7 +21,7 @@ const Player = ({ room, user }: Props) => {
   const { channel } = useChannel();
 
   const [videoUrl, setVideoUrl] = useState(room.video_url);
-  const [playing, setPlaying] = useState<boolean | undefined>(undefined);
+  const [playing, setPlaying] = useState<boolean | undefined>(true);
   const [videoTime, setVideoTime] = useState(0);
   const supabase = supabaseCreateClient();
   const playerRef = useRef<ReactPlayer>(null!);
@@ -58,21 +59,9 @@ const Player = ({ room, user }: Props) => {
       .on(
         'broadcast',
         {
-          event: 'king-to-user-video-status',
-        },
-        (state) => {
-          setPlaying(state.payload.playing);
-          setVideoTime(state.payload.time);
-          playerRef.current?.seekTo(state.payload.time);
-        }
-      )
-      .on(
-        'broadcast',
-        {
           event: 'join-video-status',
         },
         (state) => {
-          console.log('join', state);
           if (state.payload.user_id === user.id) {
             playerRef.current.seekTo(state.payload.time, 'seconds');
             setPlaying(state.payload.playing);
@@ -82,8 +71,7 @@ const Player = ({ room, user }: Props) => {
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         if (isKingRoom) {
           const newUserId = newPresences[0]?.user_id;
-          console.log('current time', videoTime);
-          console.log('new presence', newPresences);
+
           if (newUserId) {
             channel.send({
               type: 'broadcast',
@@ -99,9 +87,19 @@ const Player = ({ room, user }: Props) => {
       });
   }, [room, supabase, channel, playing, videoTime]);
 
-  const handleReady = () => {
-    playerRef.current?.seekTo(videoTime, 'seconds');
-  };
+  // const router = useRouter();
+
+  // useEffect(() => {
+  //   const handleRefresh = () => {
+  //     router.push('/');
+  //   };
+
+  //   window.addEventListener('beforeunload', handleRefresh);
+
+  //   return () => {
+  //     window.removeEventListener('beforeunload', handleRefresh);
+  //   };
+  // }, [router]);
 
   const sendPlay = () => {
     if (!channel) return;
@@ -145,7 +143,7 @@ const Player = ({ room, user }: Props) => {
           event: 'king-video-status',
           payload: {
             playing: false,
-            time: videoTime,
+            time: currentTime,
           },
         });
       }, 600);
@@ -173,7 +171,6 @@ const Player = ({ room, user }: Props) => {
         ref={playerRef}
         playing={playing}
         url={videoUrl}
-        onReady={handleReady}
         muted={false}
         onProgress={(state) => {
           console.log('played time', state);
