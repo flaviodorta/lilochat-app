@@ -31,9 +31,8 @@ export const ChannelProvider = ({
   children,
 }: ChannelProviderProps) => {
   const supabase = supabaseCreateClient();
-  const { setUsers, setKingRoomId, addUser, removeUser } = useRoomStore(
-    (state) => state
-  );
+  const { setUsers, setKingRoomId, addUser, removeUser, kingRoomId } =
+    useRoomStore((state) => state);
 
   // const supabseChannel = supabase.channel(`room_${room.id}`, {
   //   config: {
@@ -96,6 +95,7 @@ export const ChannelProvider = ({
           nickname: newPresences[0].nickname,
           online_at: newPresences[0].online_at,
         });
+        console.log('new presence 2', newPresences);
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
         // @ts-ignore

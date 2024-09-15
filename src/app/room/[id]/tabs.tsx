@@ -45,10 +45,13 @@ const RoomTabs = ({ room }: Props) => {
   };
 
   useEffect(() => {
-    getVideos();
-    getUsers();
     console.log('videos', videos);
     console.log('users', users);
+  }, [videos, users]);
+
+  useEffect(() => {
+    getVideos();
+    getUsers();
   }, []);
 
   return (
@@ -64,9 +67,9 @@ const RoomTabs = ({ room }: Props) => {
         </TabList>
         <TabPanels className='w-full flex-grow'>
           <TabPanel className='h-full w-full'>
-            <ul className='w-full flex-col  flex gap-4'>
+            <ul className='w-full flex-col overflow-y-auto items-start scrollbar-thin flex gap-4'>
               {videos.map((video) => (
-                <div key={video.id} className='flex gap-4 items-center'>
+                <div key={video.id} className='flex gap-4 items-center jus'>
                   <Image
                     width={40}
                     height={26}
@@ -76,10 +79,13 @@ const RoomTabs = ({ room }: Props) => {
                   <p>{video.title}</p>
                 </div>
               ))}
+              <button className='hover:text-purple-600'>
+                + Add more videos
+              </button>
             </ul>
           </TabPanel>
           <TabPanel className='h-full w-full'>
-            <ul className='w-full flex-col  flex gap-4'>
+            <ul className='w-full flex-col overflow-y-auto scrollbar-thin flex gap-4'>
               {users.map((user) => (
                 <div key={user.id} className='flex gap-4 items-center'>
                   <Image

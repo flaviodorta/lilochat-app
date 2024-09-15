@@ -21,19 +21,16 @@ const Player = ({ room, user }: Props) => {
   const { channel } = useChannel();
 
   const [videoUrl, setVideoUrl] = useState(room.video_url);
-  const [playing, setPlaying] = useState<boolean | undefined>(true);
-  const [videoTime, setVideoTime] = useState(0);
+  const [playing, setPlaying] = useState<boolean | undefined>(false);
   const supabase = supabaseCreateClient();
-  const playerRef = useRef<ReactPlayer>(null!);
+  const playerRef = useRef<ReactPlayer>(null);
   const isMount = useMountEffect();
   const isKingRoom = kingRoomId === user.id;
 
-  useEffect(() => {
-    console.log('playing state change', playing);
-  }, [playing]);
+  // const [isFirstClick, setIsFirstClick] = useState(true);
 
   useEffect(() => {
-    if (!channel) return;
+    if (!channel || !playerRef.current) return;
 
     channel
       .on(
@@ -43,8 +40,8 @@ const Player = ({ room, user }: Props) => {
         },
         (state) => {
           setPlaying(state.payload.playing);
-          setVideoTime(state.payload.time);
           playerRef.current?.seekTo(state.payload.time);
+          console.log('here');
         }
       )
       .on(
@@ -53,7 +50,20 @@ const Player = ({ room, user }: Props) => {
           event: 'member-video-status',
         },
         (state) => {
-          setPlaying(state.payload.playing);
+          // setPlaying(state.payload.playing);
+          if (isKingRoom) {
+            console.log('here king');
+            setPlaying(state.payload.playing);
+            const currentTime = playerRef.current!.getCurrentTime();
+            channel.send({
+              type: 'broadcast',
+              event: 'king-video-status',
+              payload: {
+                playing: state.payload.playing,
+                time: currentTime,
+              },
+            });
+          }
         }
       )
       .on(
@@ -63,14 +73,20 @@ const Player = ({ room, user }: Props) => {
         },
         (state) => {
           if (state.payload.user_id === user.id) {
-            playerRef.current.seekTo(state.payload.time, 'seconds');
-            setPlaying(state.payload.playing);
+            console.log('state time', state.payload.time);
+            console.log('playing', state.payload.playing);
+            playerRef.current?.seekTo(state.payload.time + 2, 'seconds');
+            setTimeout(() => {
+              setPlaying(state.payload.playing);
+            }, 2000);
           }
         }
       )
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         if (isKingRoom) {
           const newUserId = newPresences[0]?.user_id;
+          console.log('new presence', newPresences);
+          const currentTime = playerRef.current?.getCurrentTime() || 0;
 
           if (newUserId) {
             channel.send({
@@ -78,36 +94,23 @@ const Player = ({ room, user }: Props) => {
               event: 'join-video-status',
               payload: {
                 playing: playing,
-                time: videoTime,
+                time: currentTime,
                 user_id: newUserId,
               },
             });
           }
         }
       });
-  }, [room, supabase, channel, playing, videoTime]);
-
-  // const router = useRouter();
-
-  // useEffect(() => {
-  //   const handleRefresh = () => {
-  //     router.push('/');
-  //   };
-
-  //   window.addEventListener('beforeunload', handleRefresh);
-
-  //   return () => {
-  //     window.removeEventListener('beforeunload', handleRefresh);
-  //   };
-  // }, [router]);
+  }, [room, supabase, channel, playerRef.current]);
 
   const sendPlay = () => {
-    if (!channel) return;
+    if (!channel || !playerRef.current) return;
 
     if (isKingRoom) {
       setTimeout(() => {
         setPlaying(true);
-        const currentTime = playerRef.current.getCurrentTime();
+        const currentTime = playerRef.current?.getCurrentTime() || 0;
+        // setVideoTime(currentTime);
         channel.send({
           type: 'broadcast',
           event: 'king-video-status',
@@ -120,6 +123,7 @@ const Player = ({ room, user }: Props) => {
     } else {
       setTimeout(() => {
         setPlaying(true);
+
         channel.send({
           type: 'broadcast',
           event: 'member-video-status',
@@ -132,12 +136,12 @@ const Player = ({ room, user }: Props) => {
   };
 
   const sendPause = () => {
-    if (!channel) return;
+    if (!channel || !playerRef.current) return;
 
     if (isKingRoom) {
       setTimeout(() => {
         setPlaying(false);
-        const currentTime = playerRef.current?.getCurrentTime();
+        const currentTime = playerRef.current?.getCurrentTime() || 0;
         channel.send({
           type: 'broadcast',
           event: 'king-video-status',
@@ -161,9 +165,10 @@ const Player = ({ room, user }: Props) => {
     }
   };
 
-  console.log('playing', playing);
-
-  if (!isMount) return null;
+  // useEffect(() => {
+  //   if (playerRef.current) if (playing) playerRef.current.forceUpdate();
+  // }, [playerRef.current]);
+  if (!isMount && !playerRef.current) return null;
 
   return (
     <div className='group w-full cursor-pointer h-full flex items-center justify-center relative bg-neutral-50'>
@@ -172,16 +177,15 @@ const Player = ({ room, user }: Props) => {
         playing={playing}
         url={videoUrl}
         muted={false}
-        onProgress={(state) => {
-          console.log('played time', state);
-          if (isKingRoom) setVideoTime(state.playedSeconds);
-        }}
         width={'100%'}
+        onProgress={(state) => {
+          if (isKingRoom) console.log('time', state.playedSeconds);
+        }}
         height={'100%'}
-        controls={false}
+        controls={true}
       />
       <div
-        className='absolute flex items-center justify-center bg-red-600/0 left-0 top-0 w-full h-full'
+        className='absolute flex items-center justify-center bg-red-600/0 left-0 top-0 w-full h-3/4'
         onClick={() => {
           if (playing) sendPause();
           else sendPlay();
