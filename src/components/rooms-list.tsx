@@ -6,6 +6,7 @@ import { Room } from '@/types/rooms';
 import Spinner from './spinner';
 import RoomCard from './room-card';
 import supabaseCreateClient from '@/utils/supabase/supabase-client';
+import axios from 'axios';
 
 const RoomsList = ({ userId }: { userId?: string }) => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, error } =
@@ -31,10 +32,10 @@ const RoomsList = ({ userId }: { userId?: string }) => {
   const supabase = supabaseCreateClient();
 
   useEffect(() => {
-    const updateUserRoomId = async () => {
-      const { data: addUserToRoom, error: addUserToRoomError } = await supabase
+    const updateUserRoomId = async (roomId: string | null) => {
+      const { error: addUserToRoomError } = await supabase
         .from('users')
-        .update({ room_id: null })
+        .update({ room_id: roomId })
         .eq('id', userId);
 
       if (addUserToRoomError) {
@@ -42,7 +43,7 @@ const RoomsList = ({ userId }: { userId?: string }) => {
       }
     };
 
-    updateUserRoomId();
+    updateUserRoomId(null);
   }, []);
 
   if (error) return <p>Erro ao carregar salas</p>;
