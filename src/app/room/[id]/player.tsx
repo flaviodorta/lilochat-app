@@ -120,10 +120,10 @@ const Player = ({ room, user }: Props) => {
         muted={false}
         width={'100%'}
         height={'100%'}
-        controls={false}
+        controls={true}
       />
       <div
-        className='absolute flex items-center justify-center bg-red-600/0 left-0 top-0 w-full h-full'
+        className='absolute flex items-center justify-center bg-red-600/0 left-0 top-0 w-full h-3/4'
         onClick={() => {
           if (playing) sendPause();
           else sendPlay();

@@ -41,6 +41,7 @@ export const ChannelProvider = ({
     playing,
     setPlaying,
     videoUrl,
+    setVideoUrl,
   } = useRoomStore((state) => state);
 
   const isKingRoom = kingRoomId === user.id;
@@ -168,6 +169,16 @@ export const ChannelProvider = ({
             playerRef.seekTo(state.payload.time, 'seconds');
             setPlaying(state.payload.playing);
           }
+        }
+      )
+      .on(
+        'broadcast',
+        {
+          event: 'change-video',
+        },
+        (state) => {
+          console.log('change video on');
+          setVideoUrl(state.payload.videoUrl);
         }
       )
       .subscribe(async (status) => {

@@ -18,6 +18,7 @@ import { User } from '@/types/user';
 import { useChannel } from '@/providers/channel-provider';
 import { useRoomStore } from '@/providers/room-provider';
 import AddVideoModal from '@/components/add-video-modal';
+import { cn } from '@/utils/cn';
 
 type Props = {
   room: Room;
@@ -26,9 +27,13 @@ type Props = {
 
 const RoomTabs = ({ room, user }: Props) => {
   const { channel } = useChannel();
-  const { users } = useRoomStore((state) => state);
+  const { users, kingRoomId, videoUrl, setVideoUrl } = useRoomStore(
+    (state) => state
+  );
   const [videos, setVideos] = useState<Video[]>([]);
   const { isOpen, onClose, onOpen } = useDisclosure();
+
+  const isKingRoom = user.id === kingRoomId;
 
   const supabase = supabaseCreateClient();
 
@@ -77,23 +82,65 @@ const RoomTabs = ({ room, user }: Props) => {
     };
   }, []);
 
+  const handleChangeVideo = async (
+    videoUrl: string,
+    videoThumbnailUrl: string
+  ) => {
+    if (!isKingRoom) return;
+    setVideoUrl(videoUrl);
+
+    channel?.send({
+      type: 'broadcast',
+      event: 'change-video',
+      payload: {
+        videoUrl,
+      },
+    });
+
+    const { error } = await supabase
+      .from('rooms')
+      .update({
+        video_url: videoUrl,
+        video_thumbnail_url: videoThumbnailUrl,
+      })
+      .eq('id', room.id);
+
+    if (error) {
+      console.log('Error at update video url');
+    } else {
+      console.log('Update video url successful');
+    }
+  };
+
+  console.log('video url', videoUrl);
+
   return (
     <>
-      <div className='hidden lg:flex h-fit w-full lg:h-1/2 flex-col pt-4 pl-4 pb-4 bg-gray-100'>
+      <div className='hidden lg:flex h-fit w-full lg:h-full flex-col pt-4 pb-4 bg-gray-100'>
         <Tabs
           colorScheme='purple'
-          className='h-full w-full rounded-lg bg-neutral-50 flex flex-col'
+          className='h-full overflow-y-auto scrollbar-thin w-full rounded-lg bg-neutral-50 flex flex-col'
           variant='enclosed'
         >
-          <TabList>
+          <TabList className='sticky top-0 bg-white z-10'>
             <Tab>Videos</Tab>
             <Tab>Users</Tab>
           </TabList>
           <TabPanels className='w-full flex-grow'>
-            <TabPanel className='h-full w-full'>
-              <ul className='w-full h-[300px] flex-col overflow-y-auto items-start scrollbar-thin flex gap-4'>
+            <TabPanel className='flex-grow w-full'>
+              <ul className='w-full max-h-full flex-grow flex-col overflow-y-auto items-start flex gap-2'>
                 {videos.map((video) => (
-                  <div key={video.id} className='flex gap-4 items-center jus'>
+                  <div
+                    key={video.id}
+                    className={cn([
+                      'flex gap-4 items-center w-full py-2',
+                      isKingRoom && 'cursor-pointer',
+                      videoUrl === video.video_url && 'bg-gray-200',
+                    ])}
+                    onDoubleClick={() =>
+                      handleChangeVideo(video.video_url, video.thumbnail_url)
+                    }
+                  >
                     <Image
                       width={40}
                       height={26}
@@ -113,7 +160,7 @@ const RoomTabs = ({ room, user }: Props) => {
             </TabPanel>
 
             <TabPanel className='h-full w-full'>
-              <ul className='w-full h-[300px] flex-col overflow-y-auto scrollbar-thin flex gap-4'>
+              <ul className='w-full h-[330px] flex-col overflow-y-auto scrollbar-thin flex gap-4'>
                 {users.map((user, idx) => (
                   <div key={idx} className='flex gap-4 items-center'>
                     <Image
