@@ -52,7 +52,7 @@ const Header = ({ user }: Props) => {
         <div className='md:mx-4 flex-1 items-center justify-center flex gap-8'>
           <SearchRoom />
 
-          <div className='hidden md:block'>
+          <div className=''>
             <CreateRoomButton user={user} onOpen={onOpenCreateRoom} />
           </div>
         </div>

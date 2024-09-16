@@ -26,7 +26,8 @@ const CreateRoomButton = ({
               })
       }
     >
-      Create a room
+      <span className='hidden md:block'>Create a room</span>
+      <span className='block md:hidden font-black'>+</span>
     </button>
   );
 };

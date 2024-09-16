@@ -3,34 +3,22 @@
 import signOut from '@/actions/auth/signout';
 import { Menu, MenuButton, MenuItem, MenuList } from '@chakra-ui/react';
 import { BiLogOut, BiUser } from 'react-icons/bi';
-import { FaUserCircle } from 'react-icons/fa';
+import UserAvatar from '../user-avatar';
 
-const ProfileButton = ({
-  nickname,
-}: // deauthenticated,
-{
-  nickname: string;
-  // deauthenticated: () => void;
-}) => {
+const ProfileButton = ({ nickname }: { nickname: string }) => {
   return (
     <Menu>
       <MenuButton>
-        <div className='flex space-x-3'>
+        <div className='flex space-x-3 items-center'>
           <span className='hidden md:block text-lg text-purple-600 font-bold'>
             Hi, {nickname}
           </span>
-          <FaUserCircle className='text-purple-600 w-6 h-6' />
+          <UserAvatar width={30} height={30} nickname={nickname} />
         </div>
       </MenuButton>
       <MenuList>
         <MenuItem icon={<BiUser />}>Profile</MenuItem>
-        <MenuItem
-          onClick={() => {
-            signOut();
-            // deauthenticated();
-          }}
-          icon={<BiLogOut />}
-        >
+        <MenuItem onClick={() => signOut()} icon={<BiLogOut />}>
           Logout
         </MenuItem>
       </MenuList>

@@ -177,7 +177,6 @@ export const ChannelProvider = ({
           event: 'change-video',
         },
         (state) => {
-          console.log('change video on');
           setVideoUrl(state.payload.videoUrl);
         }
       )

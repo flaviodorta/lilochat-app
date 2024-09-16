@@ -14,6 +14,7 @@ import { User } from '@/types/user';
 import { useRoomStore } from '@/providers/room-provider';
 import { getColorFromString } from '@/utils/get-color-from-string';
 import { formatTime } from '@/utils/format-time';
+import UserAvatar from '@/components/user-avatar';
 
 type Props = {
   user: User;
@@ -175,11 +176,10 @@ const Messages = ({ room, user }: Props) => {
                   <div className='pb-1 flex items-center w-full overflow-hidden gap-2'>
                     <div className='font-bold '>
                       {msg.user_nickname ? (
-                        <Image
-                          src={`https://api.multiavatar.com/${msg.user_nickname}.png?apikey=${process.env.NEXT_PUBLIC_YOUTUBE_API_KEY}`}
+                        <UserAvatar
                           width={24}
                           height={24}
-                          alt='Avatar'
+                          nickname={msg.user_nickname}
                         />
                       ) : (
                         <FaUser />
