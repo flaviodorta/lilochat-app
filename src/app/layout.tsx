@@ -6,14 +6,16 @@ import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClient } from '@tanstack/react-query';
 import { QueryProvider } from '@/providers/query-provider';
 import { cn } from '@/utils/cn';
-// import { RoomStoreProvider } from '@/providers/room-provider';
-// import { AuthProvider } from '@/providers/auth-context';
+import Head from 'next/head';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Lilo Chat',
   description: 'Chat with strangers',
+  icons: {
+    icon: '/lilochat-logo.ico',
+  },
 };
 
 export default function RootLayout({
