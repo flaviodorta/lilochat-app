@@ -15,6 +15,7 @@ import CreateRoomModal from '../create-room-modal';
 import { useMountEffect } from '@/hooks/use-mount-effect';
 import { getUserData } from '@/actions/user/get-user-data';
 import { User } from '@/types/user';
+import Image from 'next/image';
 
 const luckiestGuy = Luckiest_Guy({ subsets: ['latin'], weight: ['400'] });
 
@@ -40,11 +41,19 @@ const Header = ({ user }: Props) => {
 
   return (
     <>
-      <div className='fixed top-0 bg-gray-50 z-10 px-4 md:px-0 container left-1/2 -translate-x-1/2 w-full flex justify-between items-center h-24'>
+      <div className='fixed px-8 md:px-0 top-0 w-full container mx-auto bg-gray-50 z-10 left-1/2 -translate-x-1/2 flex justify-between items-center h-24'>
         <div className='hidden md:block'>
           <div
-            className={`text-4xl inline-block luckiest-guy-regular text-purple-600 ${luckiestGuy.className}`}
+            className={`translate-y-2 text-4xl flex gap-2 luckiest-guy-regular text-purple-600 ${luckiestGuy.className}`}
           >
+            <Image
+              src='/lilochat-logo.svg'
+              width={60}
+              height={30}
+              className='fill-slate-500 text-purple-600'
+              color='#A020F0'
+              alt='Lilochat logo'
+            />
             lilochat
           </div>
         </div>

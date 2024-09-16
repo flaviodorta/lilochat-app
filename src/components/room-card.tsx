@@ -28,7 +28,7 @@ const RoomCard = ({ room, userId, lastRoomElementRef }: Props) => {
 
   const handleJoinRoom = async (roomId: string, userId?: string) => {
     if (!userId) {
-      toast({
+      return toast({
         duration: 5000,
         title: 'Log in to account first',
         status: 'info',
@@ -73,15 +73,15 @@ const RoomCard = ({ room, userId, lastRoomElementRef }: Props) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => handleJoinRoom(room.id, userId)}
-      className='group mx-auto cursor-pointer relative mb-8 hover:cursor-pointer w-fit flex flex-col gap-4'
+      className='group mx-auto cursor-pointer relative mb-8 hover:cursor-pointer w-full flex flex-col gap-4'
     >
-      <div className='room-card relative overflow-hidden  group-hover:-translate-x-[6px] group-hover:-translate-y-[6px] group-hover:shadow-[2px_2px_0px_0px,_3px_3px_0px_0px,_4px_4px_0px_0px,_5px_5px_0px_0px,_6px_6px_0px_0px]'>
+      <div className='room-card w-full relative overflow-hidden  group-hover:-translate-x-[6px] group-hover:-translate-y-[6px] group-hover:shadow-[2px_2px_0px_0px,_3px_3px_0px_0px,_4px_4px_0px_0px,_5px_5px_0px_0px,_6px_6px_0px_0px]'>
         <Image
           alt='image'
           width={300}
           height={200}
           src={videoThumbnailUrl}
-          className='border-l border-l-purple-600'
+          className='border-l border-l-purple-600 w-full'
         />
 
         {isHovered && (

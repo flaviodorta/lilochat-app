@@ -47,7 +47,7 @@ const AuthModal = ({
 
   useEffect(() => {
     if (modal === 'signup') setDimension((state) => ({ ...state, h: 460 }));
-    if (modal === 'login') setDimension((state) => ({ ...state, h: 510 }));
+    if (modal === 'login') setDimension((state) => ({ ...state, h: 490 }));
   }, [modal]);
 
   // const { isAuthenticated } = useAuth();

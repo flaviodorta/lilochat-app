@@ -13,7 +13,7 @@ export default async function Home() {
   }
 
   return (
-    <main className='bg-neutral-50 mx-auto  lg:px-4 xl:px-36 min-h-screen'>
+    <main className='bg-neutral-50 w-full container mx-auto min-h-[calc(100vh-160px)]'>
       <Header user={user} />
       <RoomsList userId={user?.id} />
     </main>

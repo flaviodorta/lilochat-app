@@ -49,7 +49,7 @@ const RoomsList = ({ userId }: { userId?: string }) => {
   if (error) return <p>Erro ao carregar salas</p>;
 
   return (
-    <div className='w-full container mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 mt-[160px] gap-8'>
+    <div className='w-full px-8 md:px-0 container grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 mt-[160px] gap-8'>
       {data?.pages.map((page, pageIndex) =>
         page.data.map((room: Room, index: number) => {
           const isLastRoom =
