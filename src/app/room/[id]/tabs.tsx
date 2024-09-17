@@ -51,10 +51,6 @@ const RoomTabs = ({ room, user }: Props) => {
   };
 
   useEffect(() => {
-    console.log('videos', videos);
-  }, [videos, users]);
-
-  useEffect(() => {
     getVideos();
   }, []);
 
@@ -106,12 +102,8 @@ const RoomTabs = ({ room, user }: Props) => {
 
     if (error) {
       console.log('Error at update video url');
-    } else {
-      console.log('Update video url successful');
     }
   };
-
-  console.log('video url', videoUrl);
 
   return (
     <>

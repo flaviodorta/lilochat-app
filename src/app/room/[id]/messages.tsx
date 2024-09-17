@@ -5,7 +5,7 @@ import supabaseCreateClient from '@/utils/supabase/supabase-client';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { FaChessKing, FaUser } from 'react-icons/fa6';
-import { format } from 'date-fns';
+import { format, set } from 'date-fns';
 import Spinner from '@/components/spinner';
 import { cn } from '@/utils/cn';
 import { RiVipCrown2Fill } from 'react-icons/ri';

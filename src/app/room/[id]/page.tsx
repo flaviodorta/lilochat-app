@@ -9,6 +9,7 @@ import { getRoomData } from '@/actions/rooms/get-room-data';
 import { RoomStoreProvider } from '@/providers/room-provider';
 import { ChannelProvider } from '@/providers/channel-provider';
 import RoomTabs from './tabs';
+import supabaseServerClient from '@/utils/supabase/supabase-server';
 
 const RoomPage = async ({
   params,
@@ -24,6 +25,10 @@ const RoomPage = async ({
   const room = await getRoomData(params.id);
 
   if (!room) redirect('/');
+
+  const supabase = supabaseServerClient();
+
+  // await supabase.from('users').update({ room_id: room.id }).eq('id', user.id);
 
   return (
     <RoomStoreProvider>

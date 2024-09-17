@@ -44,7 +44,7 @@ const Header = ({ user }: Props) => {
       <div className='fixed px-8 md:px-0 top-0 w-full container mx-auto bg-gray-50 z-10 left-1/2 -translate-x-1/2 flex justify-between items-center h-24'>
         <div className='hidden md:block'>
           <div
-            className={`translate-y-2 text-4xl flex gap-2 luckiest-guy-regular text-purple-600 ${luckiestGuy.className}`}
+            className={`translate-y-2 text-4xl flex gap-3 luckiest-guy-regular text-purple-600 ${luckiestGuy.className}`}
           >
             <Image
               src='/lilochat-logo.svg'

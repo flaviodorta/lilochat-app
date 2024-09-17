@@ -10,7 +10,6 @@ import { PiUsersThreeFill } from 'react-icons/pi';
 import ReactPlayer from 'react-player';
 
 type Props = {
-  // key: string;
   room: Room;
   userId: string | undefined;
   lastRoomElementRef: ((node: HTMLDivElement | null) => void) | null;
@@ -67,6 +66,43 @@ const RoomCard = ({ room, userId, lastRoomElementRef }: Props) => {
     };
   }, []);
 
+  const [usersIds, setUsersIds] = useState<string[]>([]);
+
+  const fetchUserCount = async () => {
+    const { data: usersData, error: userCountError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('room_id', room.id);
+
+    if (userCountError) {
+      console.log('Error to count users', userCountError);
+      return;
+    }
+    setUsersIds([...usersData.map((user) => user.id)]);
+  };
+
+  useEffect(() => {
+    const usersCountLister = supabase
+      .channel(`room-user-count-${room.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `room_id=eq.${room.id}`,
+        },
+        () => {
+          fetchUserCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(usersCountLister);
+    };
+  }, []);
+
   return (
     <div
       ref={lastRoomElementRef}
@@ -115,12 +151,12 @@ const RoomCard = ({ room, userId, lastRoomElementRef }: Props) => {
           {/* <PiUsersThreeFill /> */}
           <FaUser />
 
-          <span className='font-bold'>27</span>
+          <span className='font-bold'>{usersIds.length}</span>
         </div>
       </div>
 
       <div className=''>
-        <span className='bg-neutral-300 text-xs text-gray-600 rounded-full py-1 px-2 mr-2'>
+        <span className='bg-purple-200 text-xs text-purple-600 rounded-full py-1 px-2 mr-2'>
           #133
         </span>
         <span className='font-bold'>{room.name}</span>

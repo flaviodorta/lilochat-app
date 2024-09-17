@@ -45,7 +45,6 @@ export const ChannelProvider = ({
   } = useRoomStore((state) => state);
 
   const isKingRoom = kingRoomId === user.id;
-  console.log('is king room', isKingRoom);
 
   const [channel, setChannel] = useState<RealtimeChannel>(
     supabase.channel(`room_${room.id}`, {

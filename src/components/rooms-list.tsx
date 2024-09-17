@@ -1,7 +1,7 @@
 'use client';
 
 import { useInfinityRoomsQuery } from '@/hooks/use-infinity-rooms-query';
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import { Room } from '@/types/rooms';
 import Spinner from './spinner';
 import RoomCard from './room-card';
