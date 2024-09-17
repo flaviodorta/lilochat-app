@@ -1,6 +1,6 @@
 import { Room } from '@/types/rooms';
 import supabaseCreateClient from '@/utils/supabase/supabase-client';
-import { useToast } from '@chakra-ui/react';
+import { NumberInputProps, useToast } from '@chakra-ui/react';
 import { createBrowserClient } from '@supabase/ssr';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -10,12 +10,13 @@ import { PiUsersThreeFill } from 'react-icons/pi';
 import ReactPlayer from 'react-player';
 
 type Props = {
+  order: number;
   room: Room;
   userId: string | undefined;
   lastRoomElementRef: ((node: HTMLDivElement | null) => void) | null;
 };
 
-const RoomCard = ({ room, userId, lastRoomElementRef }: Props) => {
+const RoomCard = ({ order, room, userId, lastRoomElementRef }: Props) => {
   const [isHovered, setIsHovered] = useState(false);
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState(
     room.video_thumbnail_url
@@ -157,7 +158,7 @@ const RoomCard = ({ room, userId, lastRoomElementRef }: Props) => {
 
       <div className=''>
         <span className='bg-purple-200 text-xs text-purple-600 rounded-full py-1 px-2 mr-2'>
-          #133
+          #{order}
         </span>
         <span className='font-bold'>{room.name}</span>
       </div>

@@ -6,7 +6,6 @@ import { Room } from '@/types/rooms';
 import Spinner from './spinner';
 import RoomCard from './room-card';
 import supabaseCreateClient from '@/utils/supabase/supabase-client';
-import axios from 'axios';
 
 const RoomsList = ({ userId }: { userId?: string }) => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, error } =
@@ -56,9 +55,13 @@ const RoomsList = ({ userId }: { userId?: string }) => {
             pageIndex === data.pages.length - 1 &&
             index === page.data.length - 1;
 
+          console.log('page index', pageIndex);
+          console.log('index', index);
+
           return (
             <RoomCard
               key={room.id}
+              order={pageIndex * 10 + index + 1}
               userId={userId}
               lastRoomElementRef={isLastRoom ? lastRoomElementRef : null}
               room={room}

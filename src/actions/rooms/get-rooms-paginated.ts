@@ -1,6 +1,6 @@
 import supabaseServerClient from '@/utils/supabase/supabase-server';
 
-const PAGE_SIZE = 1;
+const PAGE_SIZE = 10;
 
 export const getRoomsPaginated = async (pageParam = 0) => {
   const start = pageParam * PAGE_SIZE;
