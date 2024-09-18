@@ -1,9 +1,8 @@
 import { getUserData } from '@/actions/user/get-user-data';
-import Header from '@/components/header';
-import RoomsList from '@/components/rooms-list';
+import Home from '@/components/home';
 import Image from 'next/image';
 
-export default async function Home() {
+export default async function HomePage() {
   const user = await getUserData();
 
   if (user) {
@@ -14,8 +13,7 @@ export default async function Home() {
 
   return (
     <main className='bg-neutral-50 w-full container mx-auto min-h-[calc(100vh-160px)]'>
-      <Header user={user} />
-      <RoomsList userId={user?.id} />
+      <Home user={user} />
     </main>
   );
 }

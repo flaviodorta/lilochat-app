@@ -21,9 +21,10 @@ const luckiestGuy = Luckiest_Guy({ subsets: ['latin'], weight: ['400'] });
 
 type Props = {
   user: User | null;
+  setSearchKeyword: React.Dispatch<React.SetStateAction<string>>;
 };
 
-const Header = ({ user }: Props) => {
+const Header = ({ user, setSearchKeyword }: Props) => {
   const isMount = useMountEffect();
 
   const {
@@ -59,7 +60,7 @@ const Header = ({ user }: Props) => {
         </div>
 
         <div className='md:mx-4 flex-1 items-center justify-center flex gap-8'>
-          <SearchRoom />
+          <SearchRoom setSearchKeyword={setSearchKeyword} />
 
           <div className=''>
             <CreateRoomButton user={user} onOpen={onOpenCreateRoom} />
