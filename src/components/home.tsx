@@ -66,8 +66,6 @@ const Home = ({ user }: { user: User | null }) => {
     updateUserRoomId(null);
   }, []);
 
-  console.log('data', data);
-
   if (error) return <p>Erro ao carregar salas</p>;
 
   return (
@@ -84,7 +82,7 @@ const Home = ({ user }: { user: User | null }) => {
             return (
               <RoomCard
                 key={room.id}
-                order={pageIndex * 3 + index + 1}
+                order={pageIndex * 10 + index + 1}
                 userId={user?.id}
                 lastRoomElementRef={isLastRoom ? lastRoomElementRef : null}
                 room={room}

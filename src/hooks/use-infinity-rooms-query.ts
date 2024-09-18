@@ -11,7 +11,7 @@ interface GetRoomsResponse {
   nextCursor?: number;
 }
 
-const pageSize = 3; // Defina o pageSize fora das funções para uso geral
+const pageSize = 10; // Defina o pageSize fora das funções para uso geral
 
 const getRooms = async ({
   pageParam,
