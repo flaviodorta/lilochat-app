@@ -43,7 +43,8 @@ const RoomCard = ({ order, room, userId, lastRoomElementRef }: Props) => {
     if (addUserToRoomError) {
       console.error('Erro ao atualizar o room_id:', addUserToRoomError);
     }
-    router.push('/room/' + roomId);
+    // router.push('/room/' + roomId);
+    router.push(`/room/${order}?id=${roomId}`);
   };
 
   useEffect(() => {
