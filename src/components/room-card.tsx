@@ -12,7 +12,7 @@ import ReactPlayer from 'react-player';
 type Props = {
   order: number;
   room: Room;
-  userId: string | undefined;
+  userId?: string | undefined;
   lastRoomElementRef: ((node: HTMLDivElement | null) => void) | null;
 };
 

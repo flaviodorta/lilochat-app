@@ -5,7 +5,13 @@ import { Menu, MenuButton, MenuItem, MenuList } from '@chakra-ui/react';
 import { BiLogOut, BiUser } from 'react-icons/bi';
 import UserAvatar from '../user-avatar';
 
-const ProfileButton = ({ nickname }: { nickname: string }) => {
+const UserButton = ({
+  nickname,
+  onClickProfile,
+}: {
+  nickname: string;
+  onClickProfile: () => void;
+}) => {
   return (
     <Menu>
       <MenuButton>
@@ -17,7 +23,9 @@ const ProfileButton = ({ nickname }: { nickname: string }) => {
         </div>
       </MenuButton>
       <MenuList>
-        <MenuItem icon={<BiUser />}>Profile</MenuItem>
+        <MenuItem onClick={onClickProfile} icon={<BiUser />}>
+          Profile
+        </MenuItem>
         <MenuItem onClick={() => signOut()} icon={<BiLogOut />}>
           Logout
         </MenuItem>
@@ -26,4 +34,4 @@ const ProfileButton = ({ nickname }: { nickname: string }) => {
   );
 };
 
-export default ProfileButton;
+export default UserButton;

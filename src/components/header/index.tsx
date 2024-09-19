@@ -7,15 +7,17 @@ import { useDisclosure } from '@chakra-ui/react';
 import AuthModal from '../login-modal';
 import { Luckiest_Guy } from 'next/font/google';
 // import { useAuth } from '@/context/auth-context';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BiUser } from 'react-icons/bi';
 import { FaUserCircle } from 'react-icons/fa';
-import ProfileButton from './profile-button';
+import UserButton from './profile-button';
 import CreateRoomModal from '../create-room-modal';
 import { useMountEffect } from '@/hooks/use-mount-effect';
 import { getUserData } from '@/actions/user/get-user-data';
 import { User } from '@/types/user';
 import Image from 'next/image';
+import ProfileModal from '../profile-modal';
+import supabaseCreateClient from '@/utils/supabase/supabase-client';
 
 const luckiestGuy = Luckiest_Guy({ subsets: ['latin'], weight: ['400'] });
 
@@ -27,6 +29,8 @@ type Props = {
 const Header = ({ user, setSearchKeyword }: Props) => {
   const isMount = useMountEffect();
 
+  const [nickname, setNickname] = useState(user!.nickname);
+
   const {
     isOpen: isOpenAuth,
     onClose: onCloseAuth,
@@ -37,6 +41,37 @@ const Header = ({ user, setSearchKeyword }: Props) => {
     onClose: onCloseCreateRoom,
     onOpen: onOpenCreateRoom,
   } = useDisclosure();
+  const {
+    isOpen: isOpenProfile,
+    onClose: onCloseProfile,
+    onOpen: onOpenProfile,
+  } = useDisclosure();
+
+  const supabase = supabaseCreateClient();
+
+  useEffect(() => {
+    if (!user) return;
+
+    const avatarUpdateListener = supabase
+      .channel(`avatar-udpate-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          setNickname(payload.new.nickname);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(avatarUpdateListener);
+    };
+  }, []);
 
   if (!isMount) return null;
 
@@ -71,7 +106,10 @@ const Header = ({ user, setSearchKeyword }: Props) => {
           {!user ? (
             <LoginButton onClick={() => onOpenAuth()} />
           ) : (
-            <ProfileButton nickname={user?.nickname} />
+            <UserButton
+              onClickProfile={() => onOpenProfile()}
+              nickname={nickname}
+            />
           )}
         </div>
       </div>
@@ -82,6 +120,13 @@ const Header = ({ user, setSearchKeyword }: Props) => {
         isOpen={isOpenCreateRoom}
         onClose={onCloseCreateRoom}
       />
+      {user && (
+        <ProfileModal
+          isOpen={isOpenProfile}
+          onClose={onCloseProfile}
+          user={user}
+        />
+      )}
     </>
   );
 };

@@ -11,7 +11,7 @@ interface GetRoomsResponse {
   nextCursor?: number;
 }
 
-const pageSize = 10; // Defina o pageSize fora das funções para uso geral
+const pageSize = 10;
 
 const getRooms = async ({
   pageParam,
@@ -43,11 +43,11 @@ const getRooms = async ({
 
 export const useInfinityRoomsQuery = (searchKeyword: string) => {
   return useInfiniteQuery<
-    GetRoomsResponse, // TQueryFnData
-    Error, // TError
-    GetRoomsResponse, // TData
-    readonly [string, GetRoomsParams], // TQueryKey
-    number // TPageParam
+    GetRoomsResponse,
+    Error,
+    GetRoomsResponse,
+    readonly [string, GetRoomsParams],
+    number
   >({
     queryKey: ['rooms', { searchKeyword }] as const,
     queryFn: getRooms,
