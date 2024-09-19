@@ -1,3 +1,4 @@
+import { Video } from '@/types/video';
 import { MutableRefObject } from 'react';
 import ReactPlayer from 'react-player';
 import { createStore } from 'zustand/vanilla';
@@ -30,6 +31,7 @@ type RoomState = {
   playerRef: ReactPlayer | null;
   playing: boolean;
   videoUrl: string;
+  videos: Video[];
 };
 
 type RoomActions = {
@@ -42,6 +44,8 @@ type RoomActions = {
   setPlayerRef: (ref: ReactPlayer | null) => void;
   setPlaying: (playing: boolean) => void;
   setVideoUrl: (url: string) => void;
+  setVideos: (videos: Video[]) => void;
+  addVideo: (video: Video) => void;
 };
 
 export type RoomStore = RoomState & RoomActions;
@@ -54,6 +58,7 @@ export const initRoomStore = (): RoomState => {
     playing: false,
     videoUrl: '',
     playerRef: null,
+    videos: [],
   };
 };
 
@@ -64,6 +69,7 @@ const defaultInitStore: RoomState = {
   playing: false,
   videoUrl: '',
   playerRef: null,
+  videos: [],
 };
 
 export const createRoomStore = (initState: RoomState = defaultInitStore) => {
@@ -90,5 +96,11 @@ export const createRoomStore = (initState: RoomState = defaultInitStore) => {
     setPlayerRef: (ref) => set({ playerRef: ref }),
     setPlaying: (playing) => set({ playing }),
     setVideoUrl: (url) => set({ videoUrl: url }),
+    setVideos: (videos) => set({ videos }),
+    addVideo: (video) => {
+      set((state) => ({
+        videos: [...state.videos, video],
+      }));
+    },
   }));
 };

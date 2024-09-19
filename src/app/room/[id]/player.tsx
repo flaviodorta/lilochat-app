@@ -21,7 +21,7 @@ const Player = ({ room, user }: Props) => {
     kingRoomId,
     playing,
     videoUrl,
-    // playerRef: p,
+    videos,
     setVideoUrl,
     setPlayerRef,
     setPlaying,
@@ -79,6 +79,42 @@ const Player = ({ room, user }: Props) => {
     }
   };
 
+  const supabase = supabaseCreateClient();
+
+  const handleVideoEnded = async () => {
+    if (!isKingRoom) return;
+
+    console.log('video ended');
+
+    const currentIndex = videos.findIndex(
+      (video) => video.video_url === videoUrl
+    );
+    const nextIndex = (currentIndex + 1) % videos.length;
+    const nextVideo = videos[nextIndex];
+
+    setVideoUrl(nextVideo.video_url);
+
+    const { error } = await supabase
+      .from('rooms')
+      .update({
+        video_url: nextVideo.video_url,
+        video_thumbnail_url: nextVideo.thumbnail_url,
+      })
+      .eq('id', room.id);
+
+    if (error) {
+      console.log('Error at update video_url');
+    }
+
+    channel?.send({
+      type: 'broadcast',
+      event: 'change-video',
+      payload: {
+        videoUrl: nextVideo.video_url,
+      },
+    });
+  };
+
   const sendPause = () => {
     if (!channel || !playerRef.current) return;
 
@@ -120,10 +156,13 @@ const Player = ({ room, user }: Props) => {
         muted={false}
         width={'100%'}
         height={'100%'}
-        controls={false}
+        onEnded={() => {
+          handleVideoEnded();
+        }}
+        controls={true}
       />
       <div
-        className='absolute flex items-center justify-center bg-red-600/0 left-0 top-0 w-full h-full'
+        className='absolute flex items-center justify-center bg-red-600/0 left-0 top-0 w-full h-3/4'
         onClick={() => {
           if (playing) sendPause();
           else sendPlay();

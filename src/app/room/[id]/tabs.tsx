@@ -27,10 +27,16 @@ type Props = {
 
 const RoomTabs = ({ room, user }: Props) => {
   const { channel } = useChannel();
-  const { users, kingRoomId, videoUrl, setVideoUrl } = useRoomStore(
-    (state) => state
-  );
-  const [videos, setVideos] = useState<Video[]>([]);
+  const {
+    users,
+    kingRoomId,
+    videoUrl,
+    videos,
+    setVideos,
+    addVideo,
+    setVideoUrl,
+  } = useRoomStore((state) => state);
+  // const [videos, setVideos] = useState<Video[]>([]);
   const { isOpen, onClose, onOpen } = useDisclosure();
 
   const isKingRoom = user.id === kingRoomId;
@@ -68,7 +74,8 @@ const RoomTabs = ({ room, user }: Props) => {
           filter: `room_id=eq.${room.id}`,
         },
         (payload: any) => {
-          setVideos((prevVideos) => [...prevVideos, payload.new]);
+          addVideo(payload.new);
+          // setVideos((prevVideos) => [...prevVideos, payload.new]);
         }
       )
       .subscribe();
@@ -117,7 +124,7 @@ const RoomTabs = ({ room, user }: Props) => {
             <Tab>Videos</Tab>
             <Tab>Strangers</Tab>
           </TabList>
-          <TabPanels className='w-full flex-grow'>
+          <TabPanels className='w-full flex-grow h-0'>
             <TabPanel className='flex-grow w-full'>
               <ul className='w-full max-h-full flex-grow flex-col overflow-y-auto items-start flex gap-2'>
                 {videos.map((video) => (
