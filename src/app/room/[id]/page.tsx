@@ -13,27 +13,18 @@ import supabaseServerClient from '@/utils/supabase/supabase-server';
 
 const RoomPage = async ({
   params,
-  searchParams,
 }: {
   params: {
-    id: number;
-  };
-  searchParams: {
     id: string;
   };
 }) => {
-  console.log('params', searchParams);
   const user = await getUserData();
 
   if (!user) redirect('/');
 
-  const room = await getRoomData(searchParams.id);
+  const room = await getRoomData(params.id);
 
   if (!room) redirect('/');
-
-  const supabase = supabaseServerClient();
-
-  // await supabase.from('users').update({ room_id: room.id }).eq('id', user.id);
 
   return (
     <RoomStoreProvider>
