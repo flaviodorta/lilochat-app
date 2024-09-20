@@ -45,10 +45,10 @@ const RoomPage = async ({
             </h1>
             <div className='h-[calc(100vh-40px)] flex flex-col lg:flex-row'>
               <div className='w-full h-full lg:w-1/2'>
-                <div className='h-full lg:h-1/2 bg-red-500'>
+                <div className='h-[calc(100%-40px)] lg:h-1/2 bg-red-500'>
                   <Player room={room} user={user} />
                 </div>
-                <div className='h-0 lg:h-1/2'>
+                <div className='h-10 lg:h-1/2'>
                   <RoomTabs room={room} user={user}></RoomTabs>
                 </div>
               </div>
