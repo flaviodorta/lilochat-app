@@ -13,6 +13,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Spinner,
   Stack,
   useToast,
 } from '@chakra-ui/react';
@@ -29,6 +30,7 @@ import signUpWithEmail from '@/actions/auth/signup-with-email';
 // import { useAuth } from '@/context/auth-context';
 import signInWithEmail from '@/actions/auth/signin-with-email';
 import Error from 'next/error';
+import { SP } from 'next/dist/shared/lib/utils';
 
 type Dimension = {
   w: number;
@@ -80,13 +82,12 @@ const SignUpBody = ({
 }) => {
   const { value: showPassword, toggle: toggleShowPassword } = useBoolean();
   const toast = useToast();
+  const [isAutheticating, setIsAuthenticating] = useState(false);
 
   const formSchema = z.object({
     email: z.string().email('Invalid email address.'),
     password: z.string().min(6, 'Password must be at least 6 characters long.'),
   });
-
-  // const { setIsAuthenticated, setUser } = useAuth();
 
   const {
     register,
@@ -101,6 +102,7 @@ const SignUpBody = ({
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsAuthenticating(true);
     try {
       const user = await signUpWithEmail(values);
       if (user) {
@@ -120,6 +122,7 @@ const SignUpBody = ({
         isClosable: true,
       });
     }
+    setIsAuthenticating(false);
   };
 
   return (
@@ -182,13 +185,25 @@ const SignUpBody = ({
               )}
             </InputGroup>
 
-            <button type='submit' className='button' onClick={undefined}>
-              Sign Up
+            <button
+              disabled={isAutheticating}
+              type='submit'
+              className='button'
+              onClick={undefined}
+            >
+              {isAutheticating ? (
+                <div className='flex gap-2 items-center'>
+                  <Spinner color='white' size='xs' /> Signin Up...
+                </div>
+              ) : (
+                <div>Sign Up</div>
+              )}
             </button>
 
             <Divider />
 
             <button
+              disabled={isAutheticating}
               type='button'
               className='text-white justify-center text-center bg-[#3b5998] hover:bg-[#3b5998]/90 focus:ring-4 focus:outline-none focus:ring-[#3b5998]/50 font-medium rounded-lg text-sm px-5 py-2.5 inline-flex items-center dark:focus:ring-[#3b5998]/55'
             >
@@ -209,6 +224,7 @@ const SignUpBody = ({
             </button>
 
             <button
+              disabled={isAutheticating}
               type='button'
               className='text-white justify-center bg-[#4285F4] hover:bg-[#4285F4]/90 focus:ring-4 focus:outline-none focus:ring-[#4285F4]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#4285F4]/55'
               onClick={undefined}
@@ -245,6 +261,7 @@ const SignInBody = ({
   onClose: () => void;
 }) => {
   const { value: showPassword, toggle: toggleShowPassword } = useBoolean();
+  const [isAutheticating, setIsAuthenticating] = useState(false);
 
   const formSchema = z.object({
     email: z.string().email('Invalid email address.'),
@@ -268,12 +285,12 @@ const SignInBody = ({
   const toast = useToast();
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsAuthenticating(true);
     const { data: d, error: e } = await signInWithEmail(values);
     const data = JSON.parse(d);
     const error = JSON.parse(e);
 
     if (data.session?.access_token) {
-      // setIsAuthenticated(true);
       onClose();
       toast({
         title: 'Login Sucessfull',
@@ -290,7 +307,7 @@ const SignInBody = ({
         isClosable: true,
       });
     }
-    // else if (error) setIsAuthenticated(false);
+    setIsAuthenticating(false);
   };
 
   return (
@@ -361,13 +378,25 @@ const SignInBody = ({
               </div>
             </div>
 
-            <button type='submit' className='button' onClick={undefined}>
-              Sign In
+            <button
+              disabled={isAutheticating}
+              type='submit'
+              className='button'
+              onClick={undefined}
+            >
+              {isAutheticating ? (
+                <div className='flex gap-2 items-center'>
+                  <Spinner color='white' size='xs' /> Signin In...
+                </div>
+              ) : (
+                <div>Sign In</div>
+              )}
             </button>
 
             <Divider />
 
             <button
+              disabled={isAutheticating}
               type='button'
               className='text-white justify-center text-center bg-[#3b5998] hover:bg-[#3b5998]/90 focus:ring-4 focus:outline-none focus:ring-[#3b5998]/50 font-medium rounded-lg text-sm px-5 py-2.5 inline-flex items-center dark:focus:ring-[#3b5998]/55'
             >
@@ -388,6 +417,7 @@ const SignInBody = ({
             </button>
 
             <button
+              disabled={isAutheticating}
               onClick={undefined}
               type='button'
               className='text-white justify-center bg-[#4285F4] hover:bg-[#4285F4]/90 focus:ring-4 focus:outline-none focus:ring-[#4285F4]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#4285F4]/55'

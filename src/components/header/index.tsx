@@ -29,7 +29,7 @@ type Props = {
 const Header = ({ user, setSearchKeyword }: Props) => {
   const isMount = useMountEffect();
 
-  const [nickname, setNickname] = useState(user!.nickname);
+  const [nickname, setNickname] = useState(user?.nickname || '');
 
   const {
     isOpen: isOpenAuth,
