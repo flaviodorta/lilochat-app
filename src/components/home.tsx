@@ -82,7 +82,7 @@ const Home = ({ user }: { user: User | null }) => {
             return (
               <RoomCard
                 key={room.id}
-                order={pageIndex * 10 + index + 1}
+                order={`${pageIndex * 10 + index + 1}`}
                 userId={user?.id}
                 lastRoomElementRef={isLastRoom ? lastRoomElementRef : null}
                 room={room}
