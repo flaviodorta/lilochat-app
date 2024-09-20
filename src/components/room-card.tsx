@@ -10,7 +10,7 @@ import { PiUsersThreeFill } from 'react-icons/pi';
 import ReactPlayer from 'react-player';
 
 type Props = {
-  order: number;
+  order: string;
   room: Room;
   userId?: string | undefined;
   lastRoomElementRef: ((node: HTMLDivElement | null) => void) | null;
@@ -44,7 +44,7 @@ const RoomCard = ({ order, room, userId, lastRoomElementRef }: Props) => {
       console.error('Erro ao atualizar o room_id:', addUserToRoomError);
     }
     // router.push('/room/' + roomId);
-    router.push(`/room/${roomId}`);
+    router.push(`/room/${roomId}?order=${order}`);
   };
 
   useEffect(() => {

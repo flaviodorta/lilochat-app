@@ -13,20 +13,20 @@ import supabaseServerClient from '@/utils/supabase/supabase-server';
 
 const RoomPage = async ({
   params,
+  searchParams,
 }: {
   params: {
     id: string;
   };
+  searchParams: {
+    order?: string;
+  };
 }) => {
   const user = await getUserData();
-
-  console.log('user', user);
 
   if (!user) redirect('/');
 
   const room = await getRoomData(params.id);
-
-  console.log('room', room);
 
   if (!room) redirect('/');
 
@@ -36,7 +36,7 @@ const RoomPage = async ({
         <div className='flex flex-col w-full h-screen bg-gray-100'>
           <div className='h-full flex flex-col'>
             <h1 className='w-full text-lg font-bold h-6 bg-gray-100 p-4 flex items-center'>
-              Room {params.id} - {room.name}
+              Room {searchParams.order} - {room.name}
             </h1>
             <div className='h-[calc(100vh-40px)] flex flex-col lg:flex-row'>
               <div className='w-full h-full lg:w-1/2'>
