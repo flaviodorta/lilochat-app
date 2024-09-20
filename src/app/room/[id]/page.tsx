@@ -20,9 +20,13 @@ const RoomPage = async ({
 }) => {
   const user = await getUserData();
 
+  console.log('user', user);
+
   if (!user) redirect('/');
 
   const room = await getRoomData(params.id);
+
+  console.log('room', room);
 
   if (!room) redirect('/');
 
