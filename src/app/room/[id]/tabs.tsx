@@ -27,6 +27,7 @@ import { cn } from '@/utils/cn';
 import { RxVideo } from 'react-icons/rx';
 import { FaUser } from 'react-icons/fa6';
 import { RiVipCrown2Fill } from 'react-icons/ri';
+import UserAvatar from '@/components/user-avatar';
 
 type Props = {
   room: Room;
@@ -165,17 +166,12 @@ const RoomTabs = ({ room, user }: Props) => {
     <ul className='w-full h-[330px] flex-col overflow-y-auto scrollbar-thin flex gap-4'>
       {users.map((user, idx) => (
         <div key={idx} className='flex gap-4 items-center'>
-          <Image
-            src={`https://api.multiavatar.com/${user.nickname}.png?apikey=${process.env.NEXT_PUBLIC_YOUTUBE_API_KEY}`}
-            width={24}
-            height={24}
-            alt='Avatar'
-          />
+          <UserAvatar nickname={user.nickname} width={24} height={24} />
           <div className='flex gap-2 items-center'>
             {user.nickname}
 
             {user.user_id === kingRoomId && (
-              <span className='text-yellow-500 mr-auto -translate-y-[1px]'>
+              <span className='text-yellow-500 mr-auto'>
                 <RiVipCrown2Fill />
               </span>
             )}

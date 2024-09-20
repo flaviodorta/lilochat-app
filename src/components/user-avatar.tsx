@@ -11,7 +11,7 @@ const UserAvatar = ({
 }) => {
   return (
     <Image
-      src={`https://api.multiavatar.com/${nickname}.png?apikey=${process.env.NEXT_PUBLIC_YOUTUBE_API_KEY}`}
+      src={`https://api.multiavatar.com/${nickname}.png?apikey=${process.env.NEXT_PUBLIC_AVATAR_API_URL}`}
       width={width + 'px'}
       height={height + 'px'}
       alt='Avatar'
