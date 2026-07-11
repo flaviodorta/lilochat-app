@@ -4,7 +4,7 @@ import {
   type OnApplicationShutdown,
   type OnApplicationBootstrap,
 } from '@nestjs/common';
-import { Redis } from 'ioredis';
+import type { Redis } from 'ioredis';
 import { z } from 'zod';
 import {
   presenceCheckpointEvent,
@@ -16,6 +16,7 @@ import {
   videoStartedEvent,
 } from '@lilochat/contracts';
 import {
+  createRedisClient,
   bindConsumer,
   EVENT_BUS,
   HealthModule,
@@ -66,7 +67,7 @@ export const REDIS = Symbol('REDIS');
     {
       provide: REDIS,
       useFactory: (config: EngagementConfig) =>
-        new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 }),
+        createRedisClient(config.REDIS_URL, 'engagement-redis'),
       inject: [ENGAGEMENT_CONFIG],
     },
     {

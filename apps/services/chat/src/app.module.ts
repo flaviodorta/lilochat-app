@@ -4,9 +4,10 @@ import {
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
 } from '@nestjs/common';
-import { Redis } from 'ioredis';
+import type { Redis } from 'ioredis';
 import { chatMessageSubmittedEvent } from '@lilochat/contracts';
 import {
+  createRedisClient,
   bindConsumer,
   EVENT_BUS,
   HealthModule,
@@ -57,7 +58,7 @@ export const REDIS = Symbol('REDIS');
   providers: [
     {
       provide: REDIS,
-      useFactory: (config: ChatConfig) => new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 }),
+      useFactory: (config: ChatConfig) => createRedisClient(config.REDIS_URL, 'chat-redis'),
       inject: [CHAT_CONFIG],
     },
     {

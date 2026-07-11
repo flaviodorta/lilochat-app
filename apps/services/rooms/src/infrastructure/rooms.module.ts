@@ -6,13 +6,14 @@ import {
   type OnApplicationShutdown,
 } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
-import { Redis } from 'ioredis';
+import type { Redis } from 'ioredis';
 import {
   presenceUserJoinedEvent,
   presenceUserLeftEvent,
   videoStartedEvent,
 } from '@lilochat/contracts';
 import {
+  createRedisClient,
   bindConsumer,
   EVENT_BUS,
   LOGGER,
@@ -49,7 +50,7 @@ export const REDIS = Symbol('REDIS');
     { provide: ID_GENERATOR, useValue: { next: () => randomUUID() } satisfies IdGenerator },
     {
       provide: REDIS,
-      useFactory: (config: RoomsConfig) => new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 }),
+      useFactory: (config: RoomsConfig) => createRedisClient(config.REDIS_URL, 'rooms-redis'),
       inject: [ROOMS_CONFIG],
     },
     {

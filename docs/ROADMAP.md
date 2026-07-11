@@ -319,11 +319,21 @@ progress/finished` out. DoD: integration test 3 sockets. ✅ (box was stale — 
       refresh tokens make rotation cheap — runbook secrets-rotation.md). Gotcha: tsx/esbuild
       emits no design:paramtypes — Reflector needs explicit @Inject. Known/accepted items listed
       (unsafe-inline hydration, orphan queue rows on fake roomIds, legacy YT key deletion=owner).
-- [ ] **6.5 Feature flags + graceful degradation drills.** Redis kill switches (chat, votes,
+- [x] **6.5 Feature flags + graceful degradation drills.** Redis kill switches (chat, votes,
       room creation); chaos-lite: stop RabbitMQ (rooms stay watchable), stop Redis (documented
-      behavior), restart each service under traffic (graceful drain verified).
+      behavior), restart each service under traffic (graceful drain verified). ✅ evidence in
+      docs/degradation-drills.md; driver committed (scripts/drills/). FeatureFlags (cache 5s,
+      fail-open) + ops script; flip verified under traffic. Rabbit drill 79/79/79 — required
+      building bus auto-reconnect + bounded publish buffer (amqplib doesn't reconnect; one
+      broker restart used to kill the bus fleet-wide). Redis drill KILLED the RTG on first run
+      (unhandled ioredis rejection) → createRedisClient factory + installProcessGuards + consumer
+      pause/requeue; re-run 79/79/79 with both processes alive. Restart drill: zero durable
+      loss; the not_in_a_room reconnect race documented → Phase-7 client polish.
 
 **Phase DoD:** you'd sleep fine the night of a launch spike.
+✅ Phase 6 complete locally (2026-07-11). Deploy-coupled leftovers move with the deferred VPS
+decision: obs stack in compose.prod, cert-expiry alert, scratch-VPS restore timing, drill re-runs
+on the 2×RTG topology.
 
 ---
 

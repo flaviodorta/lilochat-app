@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { Redis } from 'ioredis';
+import type { Redis } from 'ioredis';
 import {
+  createRedisClient,
   HealthModule,
   LoggerModule,
   MessagingModule,
@@ -14,7 +15,7 @@ export const REDIS = Symbol('REDIS');
   providers: [
     {
       provide: REDIS,
-      useFactory: (config: RtgConfig) => new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 }),
+      useFactory: (config: RtgConfig) => createRedisClient(config.REDIS_URL, 'rtg-redis'),
       inject: [RTG_CONFIG],
     },
   ],

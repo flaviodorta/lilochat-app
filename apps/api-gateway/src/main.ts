@@ -4,7 +4,13 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { LOGGER, otelHttpMiddleware, startOtel, type Logger } from '@lilochat/nest-shared';
+import {
+  installProcessGuards,
+  LOGGER,
+  otelHttpMiddleware,
+  startOtel,
+  type Logger,
+} from '@lilochat/nest-shared';
 import { AppModule } from './app.module.js';
 import { GATEWAY_CONFIG, type GatewayConfig } from './config.js';
 
@@ -18,6 +24,7 @@ async function bootstrap(): Promise<void> {
 
   const config = app.get<GatewayConfig>(GATEWAY_CONFIG);
   const logger = app.get<Logger>(LOGGER);
+  installProcessGuards(logger); // survive infra-blip rejections; die on true unknowns (6.5 drill)
 
   // CORP relaxed: this API serves cross-origin resources (avatars) to the web
   // app — helmet's same-origin default makes browsers refuse the <img> embeds.

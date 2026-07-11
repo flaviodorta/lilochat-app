@@ -15,6 +15,9 @@ export { bindConsumer, type ConsumerOptions } from './messaging/consumer.js';
 export { EVENT_BUS, MessagingModule } from './messaging/messaging.module.js';
 export { CircuitBreaker, CircuitOpenError } from './resilience/circuit-breaker.js';
 export { TokenBucket, type BucketPolicy } from './resilience/token-bucket.js';
+export { FeatureFlags, FLAGS, type FlagClient } from './resilience/feature-flags.js';
+export { createRedisClient } from './resilience/redis-client.js';
+export { installProcessGuards } from './resilience/process-guards.js';
 export {
   OutboxRelay,
   outboxRowFrom,

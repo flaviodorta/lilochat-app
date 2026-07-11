@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpException,
   Inject,
   Param,
   ParseUUIDPipe,
@@ -25,7 +26,7 @@ import {
   type QueueItem,
   type RoomDetail,
 } from '@lilochat/contracts';
-import { LOGGER, ZodValidationPipe, type Logger } from '@lilochat/nest-shared';
+import { FeatureFlags, FLAGS, LOGGER, ZodValidationPipe, type Logger } from '@lilochat/nest-shared';
 import { ChatClient } from '../clients/chat.client.js';
 import { PlaybackClient } from '../clients/playback.client.js';
 import { RoomsClient } from '../clients/rooms.client.js';
@@ -45,6 +46,7 @@ export class RoomsController {
     @Inject(PlaybackClient) private readonly playback: PlaybackClient,
     @Inject(ChatClient) private readonly chat: ChatClient,
     @Inject(LOGGER) private readonly logger: Logger,
+    @Inject(FeatureFlags) private readonly flags: FeatureFlags,
   ) {}
 
   /** Public: guests browse the directory. */
@@ -61,6 +63,17 @@ export class RoomsController {
     @CurrentUser() user: AuthenticatedUser,
     @Body(new ZodValidationPipe(createRoomBodySchema)) body: CreateRoomBody,
   ) {
+    if (!(await this.flags.isEnabled(FLAGS.roomCreation))) {
+      throw new HttpException(
+        {
+          statusCode: 503,
+          code: 'FEATURE_DISABLED',
+          message: 'Room creation is temporarily disabled',
+        },
+        503,
+      );
+    }
+
     const room = await this.rooms.create({ name: body.name, ownerId: user.id });
 
     // composition step 2: enqueue the first video (it starts the idle room).

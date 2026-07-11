@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { context as otelContext, metrics, SpanKind, trace } from '@opentelemetry/api';
-import { Redis } from 'ioredis';
 import type { Server, Socket } from 'socket.io';
 import {
   chatMessagePersistedEvent,
@@ -22,8 +21,11 @@ import {
   videoStartedEvent,
 } from '@lilochat/contracts';
 import {
+  createRedisClient,
   bindConsumer,
   EVENT_BUS,
+  FeatureFlags,
+  FLAGS,
   injectTraceHeaders,
   LOGGER,
   makeDomainEvent,
@@ -85,10 +87,11 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
       observable.observe(active.size);
     });
 
-  const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 });
+  const redis = createRedisClient(config.REDIS_URL, 'rtg-redis');
   const idempotency = new RedisIdempotencyStore(redis, { prefix: 'rtg' });
   const presence = new PresenceStore(redis, config.PRESENCE_TTL_MS);
   const chatBucket = new TokenBucket(redis);
+  const flags = new FeatureFlags(redis); // kill switches (§13.4)
 
   /** Thin call into playback's vote API — domain errors pass through to the ack. */
   const playbackVotes = async (path: string, body: unknown): Promise<Record<string, unknown>> => {
@@ -108,9 +111,12 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
   const lobby = io.of(LOBBY_NAMESPACE);
   const lobbyCooldown = new Map<string, { timer: NodeJS.Timeout; dirty: boolean }>();
   const emitLobbySummary = (roomId: string): void => {
-    void presence.list(roomId, Date.now()).then((users) => {
-      lobby.emit(LOBBY_EVENTS.roomSummary, { roomId, viewers: users.length });
-    });
+    void presence
+      .list(roomId, Date.now())
+      .then((users) => {
+        lobby.emit(LOBBY_EVENTS.roomSummary, { roomId, viewers: users.length });
+      })
+      .catch(() => undefined); // Redis away → the lobby just goes quiet
   };
   const scheduleLobbySummary = (roomId: string): void => {
     const pending = lobbyCooldown.get(roomId);
@@ -195,7 +201,11 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
         });
         scheduleLobbySummary(roomId);
         ack?.({ ok: true });
-      })();
+      })().catch((error) => {
+        // Redis down: joins fail loudly to the caller, the process survives
+        logger.warn({ err: error }, 'room:join failed');
+        ack?.({ ok: false, error: 'join_unavailable' });
+      });
     });
 
     // NTP-style clock sync (§6.2) — presence heartbeat piggybacks on it (§6.5)
@@ -207,7 +217,7 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
         serverNow: Date.now(),
       });
       if (data.roomId && data.session) {
-        void presence.refresh(data.roomId, data.session, Date.now());
+        void presence.refresh(data.roomId, data.session, Date.now()).catch(() => undefined);
       }
     });
 
@@ -231,6 +241,9 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
           if (!parsed.success) return ack?.({ ok: false, error: 'invalid_payload' });
           if (!data.roomId) return ack?.({ ok: false, error: 'not_in_a_room' });
 
+          if (!(await flags.isEnabled(FLAGS.chat))) {
+            return ack?.({ ok: false, error: 'chat_disabled' });
+          }
           const allowed = await chatBucket
             .consume(`chat:${data.user.id}`, CHAT_BUCKET)
             .catch(() => true); // Redis down → fail-open, same call as the gateway
@@ -250,6 +263,10 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
           chatMessages.add(1);
           ack?.({ ok: true });
         })
+        .catch((error) => {
+          logger.warn({ err: error }, 'chat:send failed');
+          ack?.({ ok: false, error: 'chat_unavailable' });
+        })
         .finally(() => span.end());
     });
 
@@ -257,6 +274,9 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
     socket.on(VOTE_SOCKET_EVENTS.voteStart, (_: unknown, ack?: (r: unknown) => void) => {
       void (async () => {
         if (!data.roomId) return ack?.({ ok: false, error: 'not_in_a_room' });
+        if (!(await flags.isEnabled(FLAGS.votes))) {
+          return ack?.({ ok: false, error: 'votes_disabled' });
+        }
         try {
           const snapshot = await playbackVotes(`/internal/rooms/${data.roomId}/votes`, {
             startedBy: data.user.id,
@@ -287,8 +307,8 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
 
     socket.on('disconnect', () => {
       if (data.roomId && data.session) {
-        void presence.leave(data.roomId, data.session);
-        publishLeft(data.roomId, data.session, new Date());
+        void presence.leave(data.roomId, data.session).catch(() => undefined);
+        publishLeft(data.roomId, data.session, new Date()); // TTL sweep is the backstop
       }
     });
   });

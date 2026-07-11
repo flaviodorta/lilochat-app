@@ -1,5 +1,6 @@
 import { Inject, Module, type OnApplicationShutdown } from '@nestjs/common';
-import { Redis } from 'ioredis';
+import { createRedisClient } from '@lilochat/nest-shared';
+import type { Redis } from 'ioredis';
 import { GATEWAY_CONFIG, type GatewayConfig } from '../config.js';
 
 export const REDIS = Symbol('REDIS');
@@ -8,8 +9,7 @@ export const REDIS = Symbol('REDIS');
   providers: [
     {
       provide: REDIS,
-      useFactory: (config: GatewayConfig) =>
-        new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 }),
+      useFactory: (config: GatewayConfig) => createRedisClient(config.REDIS_URL, 'gateway-redis'),
       inject: [GATEWAY_CONFIG],
     },
   ],

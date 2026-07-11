@@ -1,7 +1,13 @@
 import 'dotenv/config';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { LOGGER, otelHttpMiddleware, startOtel, type Logger } from '@lilochat/nest-shared';
+import {
+  installProcessGuards,
+  LOGGER,
+  otelHttpMiddleware,
+  startOtel,
+  type Logger,
+} from '@lilochat/nest-shared';
 import { AppModule } from './app.module.js';
 import { ROOMS_CONFIG, type RoomsConfig } from './config.js';
 
@@ -13,6 +19,7 @@ async function bootstrap(): Promise<void> {
 
   const config = app.get<RoomsConfig>(ROOMS_CONFIG);
   const logger = app.get<Logger>(LOGGER);
+  installProcessGuards(logger); // survive infra-blip rejections; die on true unknowns (6.5 drill)
 
   await app.listen(config.PORT);
   logger.info({ port: config.PORT }, 'rooms service up');

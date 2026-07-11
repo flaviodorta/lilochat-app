@@ -6,8 +6,9 @@ import {
   type OnApplicationShutdown,
 } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
-import { Redis } from 'ioredis';
+import type { Redis } from 'ioredis';
 import {
+  createRedisClient,
   EVENT_BUS,
   LOGGER,
   OutboxRelay,
@@ -47,8 +48,7 @@ const IDS: IdGenerator = { next: () => randomUUID() };
     { provide: APP_FILTER, useClass: DomainErrorFilter },
     {
       provide: REDIS,
-      useFactory: (config: PlaybackConfig) =>
-        new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 }),
+      useFactory: (config: PlaybackConfig) => createRedisClient(config.REDIS_URL, 'playback-redis'),
       inject: [PLAYBACK_CONFIG],
     },
     {

@@ -15,6 +15,7 @@ import { LeaderboardController } from './http/leaderboard.controller.js';
 import { RoomsController } from './http/rooms.controller.js';
 import { UsersController } from './http/users.controller.js';
 import { RedisModule, REDIS } from './redis/redis.module.js';
+import { FeatureFlags } from '@lilochat/nest-shared';
 import { JwtAuthGuard } from './security/jwt-auth.guard.js';
 import { RateLimitGuard } from './security/rate-limit.guard.js';
 
@@ -53,6 +54,8 @@ import { RateLimitGuard } from './security/rate-limit.guard.js';
     EngagementClient,
     AvatarService,
     JwtAuthGuard,
+    // kill switches (§13.4): one Redis key flips a feature, no deploy
+    { provide: FeatureFlags, useFactory: (redis) => new FeatureFlags(redis), inject: [REDIS] },
     { provide: APP_GUARD, useClass: RateLimitGuard }, // admission control runs first, on every route
   ],
 })

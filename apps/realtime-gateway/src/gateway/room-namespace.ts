@@ -1,6 +1,6 @@
 import type { Server as HttpServer } from 'node:http';
+import { createRedisClient } from '@lilochat/nest-shared';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { Redis } from 'ioredis';
 import jwt from 'jsonwebtoken';
 import { Server, type Namespace } from 'socket.io';
 import { ROOM_NAMESPACE } from '@lilochat/contracts';
@@ -26,8 +26,8 @@ export function createRoomNamespace(input: {
 }): { io: Server; rooms: Namespace } {
   const { httpServer, config, logger } = input;
 
-  const pubClient = new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 });
-  const subClient = pubClient.duplicate();
+  const pubClient = createRedisClient(config.REDIS_URL, 'adapter-pub');
+  const subClient = createRedisClient(config.REDIS_URL, 'adapter-sub');
 
   const io = new Server(httpServer, {
     cors: {

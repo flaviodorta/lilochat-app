@@ -1,7 +1,13 @@
 import 'dotenv/config';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { LOGGER, otelHttpMiddleware, startOtel, type Logger } from '@lilochat/nest-shared';
+import {
+  installProcessGuards,
+  LOGGER,
+  otelHttpMiddleware,
+  startOtel,
+  type Logger,
+} from '@lilochat/nest-shared';
 import { AppModule } from './app.module.js';
 import { RTG_CONFIG, type RtgConfig } from './config.js';
 import { setupRealtime } from './setup.js';
@@ -14,6 +20,7 @@ async function bootstrap(): Promise<void> {
 
   const config = app.get<RtgConfig>(RTG_CONFIG);
   const logger = app.get<Logger>(LOGGER);
+  installProcessGuards(logger); // survive infra-blip rejections; die on true unknowns (6.5 drill)
 
   await setupRealtime(app);
   await app.listen(config.PORT);
