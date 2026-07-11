@@ -1,0 +1,42 @@
+# OTel Collector pipeline (ADR-011): services speak OTLP to this collector only.
+# Backends are exporter config — Grafana stack by default; Datadog is a commented
+# exporter block enabled on demand for demos.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:9464
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+  # datadog:                       # ← enable on demand (ADR-011)
+  #   api:
+  #     key: ${env:DD_API_KEY}
+  #     site: datadoghq.com
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/tempo]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki]

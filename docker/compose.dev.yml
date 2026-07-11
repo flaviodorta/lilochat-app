@@ -1,0 +1,91 @@
+name: lilochat-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: lilochat
+      POSTGRES_PASSWORD: lilochat # dev-only credentials, never reused in prod
+    ports:
+      - '5440:5432' # non-default host port: other local projects own 5432/5434
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U lilochat']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6380:6379' # non-default host port: another local project owns 6379
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: lilochat
+      RABBITMQ_DEFAULT_PASS: lilochat # dev-only
+    ports:
+      - '5672:5672' # AMQP
+      - '15672:15672' # management UI
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── Observability stack — heavy, so opt-in: docker compose --profile obs up ──
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    profiles: [obs]
+    command: ['--config=/etc/otel/config.yml']
+    volumes:
+      - ./otel-collector.yml:/etc/otel/config.yml:ro
+    ports:
+      - '4317:4317' # OTLP gRPC
+      - '4318:4318' # OTLP HTTP
+    depends_on: [tempo, loki]
+
+  prometheus:
+    image: prom/prometheus:latest
+    profiles: [obs]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - '9090:9090'
+
+  loki:
+    image: grafana/loki:3.3.0
+    profiles: [obs]
+    ports:
+      - '3100:3100'
+
+  tempo:
+    image: grafana/tempo:2.7.0
+    profiles: [obs]
+    command: ['-config.file=/etc/tempo/tempo.yml']
+    volumes:
+      - ./tempo.yml:/etc/tempo/tempo.yml:ro
+    ports:
+      - '3200:3200'
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    profiles: [obs]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin # dev-only
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - '3001:3000' # 3000 is taken by Next.js dev
+
+volumes:
+  pgdata:
