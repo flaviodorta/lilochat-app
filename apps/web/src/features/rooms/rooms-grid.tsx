@@ -52,6 +52,24 @@ export function RoomsGrid({ q }: { q?: string }) {
     );
   }
 
+  if (query.isError) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-rose-500/30 py-20 text-center">
+        <p className="text-lg font-medium text-zinc-300">The room directory is unreachable</p>
+        <p className="text-sm text-zinc-500">
+          Rooms keep playing — we just can&apos;t list them right now.
+        </p>
+        <button
+          type="button"
+          onClick={() => void query.refetch()}
+          className="focus-ring mt-1 rounded-full border border-edge bg-surface px-4 py-2 text-sm font-medium text-zinc-200 transition-colors hover:border-brand/50"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
   if (rooms.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-edge py-20 text-center">

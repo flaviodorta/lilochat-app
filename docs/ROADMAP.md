@@ -339,9 +339,15 @@ on the 2×RTG topology.
 
 ## Phase 7 — Polish & Launch
 
-- [ ] **7.1 Design pass.** Motion audit (150–250 ms, reduced-motion), empty/error/loading states
+- [x] **7.1 Design pass.** Motion audit (150–250 ms, reduced-motion), empty/error/loading states
       everywhere, onboarding hints (first visit → "join a room, add a video"), 404/500 pages
-      with brand.
+      with brand. ✅ MotionConfig reducedMotion="user" (every motion component) + motion-reduce
+      on CSS hovers; duration audit clean (150–250 ms; countdown ring is functional, exempt).
+      404/error/global-error pages branded (global-error inlines styles — it replaces the root
+      layout). Directory error state + retry; onboarding hint (localStorage, mounted-only to
+      avoid hydration drift); chat_disabled now chips "disabled by the crew" in-stream (6.5
+      follow-up). Still open in Phase 7 backlog: chat virtualization + day dividers (3.6),
+      People tab + session time (5.3), send-queue-until-joined (6.5).
 - [ ] **7.2 SEO & sharing.** Metadata, OG images per room (current video thumb + name), sitemap,
       favicons from logo.
 - [ ] **7.3 README = portfolio front door.** Hero GIF (two browsers in sync), C4 diagrams,

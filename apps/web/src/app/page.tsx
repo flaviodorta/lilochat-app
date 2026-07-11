@@ -1,4 +1,5 @@
 import { Header } from '@/components/header';
+import { OnboardingHint } from '@/components/onboarding-hint';
 import { RoomsGrid } from '@/features/rooms/rooms-grid';
 
 export default function HomePage() {
@@ -19,6 +20,8 @@ export default function HomePage() {
             channel, and its people are the curators.
           </p>
         </section>
+
+        <OnboardingHint />
 
         <section aria-label="Rooms">
           <RoomsGrid />

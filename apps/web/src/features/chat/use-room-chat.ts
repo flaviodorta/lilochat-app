@@ -34,6 +34,7 @@ export function useRoomChat(roomId: string, socket: Socket | null) {
   const [live, setLive] = useState<UiMessage[]>([]);
   const [present, setPresent] = useState<PresenceUser[]>([]);
   const ackTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const systemRef = useRef<(content: string) => void>(() => undefined);
 
   const history = useInfiniteQuery({
     queryKey: ['messages', roomId],
@@ -111,6 +112,7 @@ export function useRoomChat(roomId: string, socket: Socket | null) {
           status: 'sent' as const,
         },
       ]);
+    systemRef.current = system; // send() (outside this effect) can chip too
     const onPlaybackStarted = (payload: { roomId: string; title: string }) => {
       if (payload.roomId === roomId) system(`▶ Now playing: ${payload.title}`);
     };
@@ -153,6 +155,9 @@ export function useRoomChat(roomId: string, socket: Socket | null) {
           setLive((current) =>
             current.map((m) => (m.key === tempId ? { ...m, status: 'failed' } : m)),
           );
+          if (result.error === 'chat_disabled') {
+            systemRef.current('💤 Chat is temporarily disabled by the crew');
+          }
         }
       });
       // the optimistic chat:new echo (we're in the room) renders it — no local add

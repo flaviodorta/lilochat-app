@@ -22,6 +22,7 @@ export function RoomCard({ room, serverNowMs }: { room: RoomCardData; serverNowM
       className={cn(
         'focus-ring group block overflow-hidden rounded-xl border border-edge bg-surface',
         'transition-all duration-200 hover:scale-[1.02] hover:border-brand/40 hover:glow-brand',
+        'motion-reduce:transition-none motion-reduce:hover:scale-100',
       )}
     >
       <div className="relative aspect-video bg-surface-raised">
