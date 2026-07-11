@@ -4,6 +4,7 @@ export * from './events/rooms.js';
 export * from './events/playback.js';
 export * from './events/chat.js';
 export * from './events/presence.js';
+export * from './events/votes.js';
 export * from './dto/auth.js';
 export * from './dto/rooms.js';
 export * from './dto/chat.js';

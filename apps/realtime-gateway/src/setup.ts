@@ -4,6 +4,11 @@ import { Redis } from 'ioredis';
 import type { Server, Socket } from 'socket.io';
 import {
   chatMessagePersistedEvent,
+  voteCastPayloadSchema,
+  voteFinishedEvent,
+  voteProgressEvent,
+  voteStartedEvent,
+  VOTE_SOCKET_EVENTS,
   chatSendPayloadSchema,
   CHAT_SOCKET_EVENTS,
   LOBBY_EVENTS,
@@ -53,6 +58,19 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
   const idempotency = new RedisIdempotencyStore(redis, { prefix: 'rtg' });
   const presence = new PresenceStore(redis, config.PRESENCE_TTL_MS);
   const chatBucket = new TokenBucket(redis);
+
+  /** Thin call into playback's vote API — domain errors pass through to the ack. */
+  const playbackVotes = async (path: string, body: unknown): Promise<Record<string, unknown>> => {
+    const response = await fetch(`${config.PLAYBACK_SERVICE_URL}${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!response.ok)
+      throw Object.assign(new Error(String(data.code ?? response.status)), { data });
+    return data;
+  };
 
   // ── /lobby: public live viewer counts for the home directory (§7.2) ──────
   // Throttled per room (§4.3 bottleneck #1): leading emit + trailing coalesce.
@@ -188,6 +206,38 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
       })();
     });
 
+    // skip voting (§6.4): RTG relays; playback owns the rules
+    socket.on(VOTE_SOCKET_EVENTS.voteStart, (_: unknown, ack?: (r: unknown) => void) => {
+      void (async () => {
+        if (!data.roomId) return ack?.({ ok: false, error: 'not_in_a_room' });
+        try {
+          const snapshot = await playbackVotes(`/internal/rooms/${data.roomId}/votes`, {
+            startedBy: data.user.id,
+          });
+          ack?.({ ok: true, ...snapshot });
+        } catch (error) {
+          ack?.({ ok: false, error: (error as Error).message });
+        }
+      })();
+    });
+
+    socket.on(VOTE_SOCKET_EVENTS.voteCast, (payload: unknown, ack?: (r: unknown) => void) => {
+      void (async () => {
+        const parsed = voteCastPayloadSchema.safeParse(payload);
+        if (!parsed.success) return ack?.({ ok: false, error: 'invalid_payload' });
+        if (!data.roomId) return ack?.({ ok: false, error: 'not_in_a_room' });
+        try {
+          const snapshot = await playbackVotes(
+            `/internal/rooms/${data.roomId}/votes/${parsed.data.voteId}/cast`,
+            { userId: data.user.id },
+          );
+          ack?.({ ok: true, ...snapshot });
+        } catch (error) {
+          ack?.({ ok: false, error: (error as Error).message });
+        }
+      })();
+    });
+
     socket.on('disconnect', () => {
       if (data.roomId && data.session) {
         void presence.leave(data.roomId, data.session);
@@ -252,6 +302,23 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
     idempotency,
     logger,
   });
+
+  for (const [suffix, schema, event] of [
+    ['vote-started', voteStartedEvent, VOTE_SOCKET_EVENTS.voteStarted],
+    ['vote-progress', voteProgressEvent, VOTE_SOCKET_EVENTS.voteProgress],
+    ['vote-finished', voteFinishedEvent, VOTE_SOCKET_EVENTS.voteFinished],
+  ] as const) {
+    await bindConsumer(bus, {
+      queue: `${config.RTG_CONSUMER_QUEUE}.${suffix}`,
+      bindings: [schema.shape.name.value],
+      schema,
+      handler: async (incoming) => {
+        rooms.to(roomKey(incoming.payload.roomId)).emit(event, incoming.payload);
+      },
+      idempotency,
+      logger,
+    });
+  }
 
   return io;
 }

@@ -4,6 +4,7 @@ export const rtgEnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(4110),
   REDIS_URL: z.string().min(1),
   RABBITMQ_URL: z.string().min(1),
+  PLAYBACK_SERVICE_URL: z.string().url().default('http://localhost:4103'),
   /** RS256 verify half — same pair as the api-gateway. */
   JWT_PUBLIC_KEY: z.string().min(1),
   CORS_ORIGINS: z.string().default('http://localhost:3000'),

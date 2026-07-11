@@ -47,6 +47,25 @@ enum QueueItemStatus {
   SKIPPED
 }
 
+/// Durable vote history (§8); live ballots are a Redis SET (fast, idempotent).
+model Vote {
+  id        String    @id @db.Uuid
+  roomId    String    @map("room_id") @db.Uuid
+  itemId    String    @map("item_id") @db.Uuid
+  startedBy String    @map("started_by") @db.Uuid
+  endsAt    DateTime  @map("ends_at")
+  result    VoteResult?
+  createdAt DateTime  @map("created_at")
+
+  @@index([roomId, result])
+  @@map("votes")
+}
+
+enum VoteResult {
+  PASSED
+  FAILED
+}
+
 model OutboxEvent {
   id          String    @id @db.Uuid
   name        String

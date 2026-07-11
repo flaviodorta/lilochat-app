@@ -1,6 +1,6 @@
 import { Queue, Worker, type ConnectionOptions } from 'bullmq';
 import type { Logger } from '@lilochat/nest-shared';
-import type { AdvanceScheduler } from '../../domain/ports.js';
+import type { AdvanceScheduler, VoteScheduler } from '../../domain/ports.js';
 
 /** BullMQ opens its own connections (it needs blocking ones anyway); pnpm gives
  *  bullmq a private ioredis copy, so passing our instance trips type identity. */
@@ -21,7 +21,7 @@ function connectionFromUrl(redisUrl: string): ConnectionOptions {
  * cancels + reschedules. The worker runs in-process (bulkhead: scheduler
  * concurrency is isolated from the HTTP request path by BullMQ's own worker).
  */
-export class BullMqAdvanceScheduler implements AdvanceScheduler {
+export class BullMqAdvanceScheduler implements AdvanceScheduler, VoteScheduler {
   private readonly queue: Queue;
   private worker: Worker | null = null;
 
@@ -50,11 +50,32 @@ export class BullMqAdvanceScheduler implements AdvanceScheduler {
     await this.queue.remove(`adv-${itemId}`).catch(() => undefined);
   }
 
-  /** Wire the handler once the PlaybackManager exists (composition root). */
-  startWorker(handler: (roomId: string) => Promise<void>): void {
+  async scheduleResolution(input: { voteId: string; roomId: string; fireAt: Date }): Promise<void> {
+    const delay = Math.max(0, input.fireAt.getTime() - Date.now());
+    await this.queue.add(
+      'vote-resolve',
+      { voteId: input.voteId, roomId: input.roomId },
+      { jobId: `vote-${input.voteId}`, delay, removeOnComplete: true, removeOnFail: true },
+    );
+  }
+
+  async cancelResolution(voteId: string): Promise<void> {
+    await this.queue.remove(`vote-${voteId}`).catch(() => undefined);
+  }
+
+  /** Wire the handlers once the composition root has them; dispatch by job name. */
+  startWorker(handlers: {
+    advance: (roomId: string) => Promise<void>;
+    resolveVote: (voteId: string) => Promise<void>;
+  }): void {
     this.worker = new Worker(
       this.options.queueName,
-      async (job) => handler((job.data as { roomId: string }).roomId),
+      async (job) => {
+        if (job.name === 'vote-resolve') {
+          return handlers.resolveVote((job.data as { voteId: string }).voteId);
+        }
+        return handlers.advance((job.data as { roomId: string }).roomId);
+      },
       {
         connection: connectionFromUrl(this.options.redisUrl),
         concurrency: 8,

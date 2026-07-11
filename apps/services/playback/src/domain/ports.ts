@@ -87,6 +87,49 @@ export interface AdvanceScheduler {
   cancel(itemId: string): Promise<void>;
 }
 
+export interface VoteRecord {
+  id: string;
+  roomId: string;
+  itemId: string;
+  startedBy: string;
+  endsAt: Date;
+  result: 'PASSED' | 'FAILED' | null;
+  createdAt: Date;
+}
+
+export interface VoteRepository {
+  createWithEvents(vote: VoteRecord, events: DomainEvent<unknown>[]): Promise<void>;
+  findOpen(roomId: string): Promise<VoteRecord | null>;
+  findById(voteId: string): Promise<VoteRecord | null>;
+  setResultWithEvents(
+    voteId: string,
+    result: 'PASSED' | 'FAILED',
+    events: DomainEvent<unknown>[],
+  ): Promise<void>;
+  appendEvents(events: DomainEvent<unknown>[]): Promise<void>;
+}
+
+/** Live ballots + fail-cooldowns — hot, idempotent, expendable (Redis). */
+export interface BallotStore {
+  /** true when this user had not voted yet. */
+  addYes(voteId: string, userId: string, ttlS: number): Promise<boolean>;
+  countYes(voteId: string): Promise<number>;
+  clear(voteId: string): Promise<void>;
+  setCooldown(roomId: string, itemId: string, seconds: number): Promise<void>;
+  isCoolingDown(roomId: string, itemId: string): Promise<boolean>;
+}
+
+/** Presence is OWNED by the realtime gateway; this reads its documented Redis
+ *  key shape (`presence:{roomId}` ZSET) — the §5.3 quorum seam, kept explicit. */
+export interface PresenceReader {
+  countPresent(roomId: string): Promise<number>;
+}
+
+export interface VoteScheduler {
+  scheduleResolution(input: { voteId: string; roomId: string; fireAt: Date }): Promise<void>;
+  cancelResolution(voteId: string): Promise<void>;
+}
+
 export interface Clock {
   now(): Date;
 }

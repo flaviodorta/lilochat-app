@@ -40,6 +40,12 @@ export class PlaybackManager {
     await this.startNext(roomId);
   }
 
+  /** Forced skip (vote passed) — same funnel, different reason. */
+  async skip(roomId: string, reason: 'vote' | 'removed'): Promise<void> {
+    await this.finishCurrent(roomId, reason);
+    await this.startNext(roomId);
+  }
+
   private async finishCurrent(roomId: string, reason: SkipReason): Promise<void> {
     const { queue, state, scheduler, clock } = this.deps;
     const playing = await queue.findPlaying(roomId);

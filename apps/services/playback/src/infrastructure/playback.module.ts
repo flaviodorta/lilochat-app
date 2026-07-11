@@ -15,6 +15,7 @@ import {
   type RabbitMqBus,
 } from '@lilochat/nest-shared';
 import { AddVideoUseCase } from '../application/add-video.usecase.js';
+import { VoteEngine } from '../application/vote-engine.js';
 import { GetRoomStateUseCase } from '../application/get-room-state.usecase.js';
 import { PlaybackManager } from '../application/playback-manager.js';
 import { RemoveItemUseCase } from '../application/remove-item.usecase.js';
@@ -27,7 +28,10 @@ import { PrismaQueueRepository } from './prisma/prisma-queue.repository.js';
 import { PrismaVideoCacheRepository } from './prisma/prisma-video-cache.repository.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { PrismaService } from './prisma/prisma.service.js';
+import { RedisBallotStore } from './redis/redis-ballot.store.js';
 import { RedisPlaybackStateStore } from './redis/redis-playback-state.store.js';
+import { RedisPresenceReader } from './redis/redis-presence.reader.js';
+import { PrismaVoteRepository } from './prisma/prisma-vote.repository.js';
 import { BullMqAdvanceScheduler } from './scheduler/bullmq-advance.scheduler.js';
 import { YoutubeMetadataProvider } from './youtube/youtube-metadata.provider.js';
 
@@ -92,6 +96,28 @@ const IDS: IdGenerator = { next: () => randomUUID() };
       inject: [PrismaService, PlaybackManager, PLAYBACK_CONFIG],
     },
     {
+      provide: VoteEngine,
+      useFactory: (
+        prisma: PrismaService,
+        redis: Redis,
+        manager: PlaybackManager,
+        scheduler: BullMqAdvanceScheduler,
+      ) =>
+        new VoteEngine({
+          votes: new PrismaVoteRepository(prisma),
+          ballots: new RedisBallotStore(redis),
+          presence: new RedisPresenceReader(redis),
+          playbackState: new RedisPlaybackStateStore(redis),
+          manager,
+          scheduler,
+          clock: CLOCK,
+          ids: IDS,
+          windowS: 45,
+          cooldownS: 90,
+        }),
+      inject: [PrismaService, REDIS, PlaybackManager, SCHEDULER],
+    },
+    {
       provide: GetRoomStateUseCase,
       useFactory: (prisma: PrismaService, redis: Redis) =>
         new GetRoomStateUseCase({
@@ -118,6 +144,7 @@ export class PlaybackModule implements OnApplicationBootstrap, OnApplicationShut
     @Inject(REDIS) private readonly redis: Redis,
     @Inject(SCHEDULER) private readonly scheduler: BullMqAdvanceScheduler,
     @Inject(PlaybackManager) private readonly manager: PlaybackManager,
+    @Inject(VoteEngine) private readonly voteEngine: VoteEngine,
     @Inject(LOGGER) private readonly logger: Logger,
   ) {}
 
@@ -129,8 +156,11 @@ export class PlaybackModule implements OnApplicationBootstrap, OnApplicationShut
     });
     this.relay.start();
 
-    // the advance worker IS the single writer per room (jobId = roomId)
-    this.scheduler.startWorker((roomId) => this.manager.advance(roomId));
+    // one worker, two job kinds: advances and vote resolutions
+    this.scheduler.startWorker({
+      advance: (roomId) => this.manager.advance(roomId),
+      resolveVote: (voteId) => this.voteEngine.resolveByTimeout(voteId),
+    });
   }
 
   async onApplicationShutdown(): Promise<void> {

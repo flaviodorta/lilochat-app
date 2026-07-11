@@ -225,10 +225,14 @@ verified manually (headless Chromium lacks the codecs). Deploy half still deferr
 
 ## Phase 4 — Queue UX + Skip Votes
 
-- [ ] **4.1 Vote engine (playback).** Redis vote state (TTL 45 s), rules: one open vote/room,
+- [x] **4.1 Vote engine (playback).** Redis vote state (TTL 45 s), rules: one open vote/room,
       90 s cooldown after fail, quorum `floor(present/2)+1` **recomputed at resolution**, resolve
       on quorum-hit or timeout; skip → cancel/reschedule BullMQ job. Publishes `playback.vote.*`.
       DoD: unit tests for every rule + quorum-shrink edge case (voters leaving mid-vote).
+      ✅ 12 unit tests (incl. quorum-shrink flipping a losing vote at the buzzer, solo-room
+      instant pass, double-resolution no-op) + integration: quorum → the video actually
+      advances. Design: durable votes in PG (outbox events), live ballots in Redis SET,
+      presence read from RTG's documented ZSET (the §5.3 quorum seam, explicit in code).
 - [ ] **4.2 RTG relay.** `vote:start`/`vote:cast` (idempotent per user) in; `vote:started/
 progress/finished` out. DoD: integration test 3 sockets.
 - [ ] **4.3 Web: vote overlay.** Floating card (spring-in), countdown ring, `4/7` progress, result
