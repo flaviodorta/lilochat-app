@@ -66,18 +66,20 @@ Backend first:
 
 Frontend:
 
-- [ ] **1.6 Web scaffold + design tokens.** `apps/web`: Next.js App Router, Tailwind v4 tokens from
+- [x] **1.6 Web scaffold + design tokens.** `apps/web`: Next.js App Router, Tailwind v4 tokens from
       CLAUDE.md §12 (zinc scale, purple brand, semantic colors), Inter via `next/font`,
-      Luckiest Guy loaded **only** for the wordmark component, shadcn/ui init, framer-motion,
-      TanStack Query provider, dark `<html>` default. DoD: styleguide route (`/dev/ui`) rendering
-      tokens + core components.
-- [ ] **1.7 Header + shell.** Glassy sticky header: logo + wordmark, search (disabled stub),
+      Luckiest Guy loaded **only** for the wordmark component, copied-in Tailwind primitives
+      (no component libraries), framer-motion, TanStack Query provider, dark default.
+      DoD: styleguide route (`/dev/ui`) rendering tokens + core components. ✅ verified live.
+- [x] **1.7 Header + shell.** Glassy sticky header: logo + wordmark, search (disabled stub),
       "Create room" CTA (stub), auth slot. DoD: responsive, matches §12.2.
-- [ ] **1.8 Auth modal.** Dialog from header CTA + gated actions (no auth pages — owner call):
+- [x] **1.8 Auth modal.** Dialog from header CTA + gated actions (no auth pages — owner call):
       animated slide between Sign in / Create account panels, react-hook-form + zod (same
       contracts), **live Multiavatar preview** on nickname typing (debounced), error states,
       session handling: refresh in httpOnly cookie, access in memory w/ silent refresh.
-      Resumes the gated action after auth. DoD: full flow against local stack.
+      DoD: full flow against local stack. ✅ API flow verified end-to-end (register→refresh→
+      me→logout vs live stack); in-browser click-through becomes the first Playwright case (1.9).
+      ⏳ "resume gated action after auth" deferred to Phase 2 (first real gated action = join room).
 - [ ] **1.9 E2E + deploy.** Playwright: register→login→profile. VPS setup: Docker + Traefik (TLS),
       compose.prod v0 (gateway, identity, web, pg, redis), GH Actions deploy job (GHCR + SSH),
       domain + HTTPS. DoD: auth works on the public URL.
