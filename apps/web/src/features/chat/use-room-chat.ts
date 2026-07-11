@@ -14,6 +14,7 @@ import { api } from '@/lib/api';
 
 export interface UiMessage {
   key: string; // messageId when durable, tempId while pending
+  kind: 'user' | 'system';
   userId: string;
   nickname: string;
   content: string;
@@ -55,6 +56,7 @@ export function useRoomChat(roomId: string, socket: Socket | null) {
         ...current,
         {
           key: message.tempId,
+          kind: 'user',
           userId: message.userId,
           nickname: message.nickname,
           content: message.content,
@@ -94,6 +96,35 @@ export function useRoomChat(roomId: string, socket: Socket | null) {
     const onLeft = ({ userId }: { userId: string }) =>
       setPresent((current) => current.filter((u) => u.userId !== userId));
 
+    // in-stream system chips (§3.5): client-side, not persisted (v1 decision)
+    let systemSeq = 0;
+    const system = (content: string) =>
+      setLive((current) => [
+        ...current,
+        {
+          key: `sys-${Date.now()}-${systemSeq++}`,
+          kind: 'system' as const,
+          userId: '',
+          nickname: '',
+          content,
+          at: new Date().toISOString(),
+          status: 'sent' as const,
+        },
+      ]);
+    const onPlaybackStarted = (payload: { roomId: string; title: string }) => {
+      if (payload.roomId === roomId) system(`▶ Now playing: ${payload.title}`);
+    };
+    const onVoteStarted = (payload: { roomId: string }) => {
+      if (payload.roomId === roomId) system('🗳 A skip vote has started');
+    };
+    const onVoteFinished = (payload: { roomId: string; passed: boolean }) => {
+      if (payload.roomId === roomId)
+        system(payload.passed ? '⏭ Vote passed — skipping' : '🗳 Vote failed — the video stays');
+    };
+    socket.on('playback:started', onPlaybackStarted);
+    socket.on('vote:started', onVoteStarted);
+    socket.on('vote:finished', onVoteFinished);
+
     socket.on('chat:new', onNew);
     socket.on('chat:ack', onAck);
     socket.on('presence:state', onPresenceState);
@@ -105,6 +136,9 @@ export function useRoomChat(roomId: string, socket: Socket | null) {
       socket.off('presence:state', onPresenceState);
       socket.off('presence:joined', onJoined);
       socket.off('presence:left', onLeft);
+      socket.off('playback:started', onPlaybackStarted);
+      socket.off('vote:started', onVoteStarted);
+      socket.off('vote:finished', onVoteFinished);
       for (const timer of ackTimers.current.values()) clearTimeout(timer);
       ackTimers.current.clear();
     };
@@ -134,6 +168,7 @@ export function useRoomChat(roomId: string, socket: Socket | null) {
         .reverse()
         .map<UiMessage>((m) => ({
           key: m.id,
+          kind: 'user',
           userId: m.userId,
           nickname: m.nickname,
           content: m.content,

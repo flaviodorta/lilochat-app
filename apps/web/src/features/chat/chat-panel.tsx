@@ -132,6 +132,13 @@ export function ChatPanel({
 }
 
 function MessageRow({ message }: { message: UiMessage }) {
+  if (message.kind === 'system') {
+    return (
+      <p className="py-0.5 text-center text-xs text-zinc-500" data-kind="system">
+        {message.content}
+      </p>
+    );
+  }
   return (
     <div
       className={cn(

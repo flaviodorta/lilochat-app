@@ -13,10 +13,13 @@ import { getRoom } from '@/features/rooms/api';
 import { AddVideoModal } from '@/features/rooms/add-video-modal';
 import { useRoomSync } from '@/features/rooms/use-room-sync';
 import { ChatPanel } from '@/features/chat/chat-panel';
+import { useRoomVotes } from '@/features/votes/use-room-votes';
+import { VoteOverlay } from '@/features/votes/vote-overlay';
+import { removeVideo } from '@/features/rooms/api';
 import { formatClock, positionSeconds } from '@/features/rooms/use-server-clock';
 
 export function RoomView({ roomId }: { roomId: string }) {
-  const { accessToken, status, openAuthModal } = useAuth();
+  const { accessToken, status, user, openAuthModal } = useAuth();
 
   const detailQuery = useQuery({
     queryKey: ['room', roomId],
@@ -28,6 +31,7 @@ export function RoomView({ roomId }: { roomId: string }) {
     detailQuery.data,
     accessToken,
   );
+  const votes = useRoomVotes(roomId, socket);
 
   if (detailQuery.isLoading) {
     return (
@@ -62,12 +66,35 @@ export function RoomView({ roomId }: { roomId: string }) {
             viewers={room.viewers}
             playback={playback}
             serverNowMs={serverNowMs}
+            vote={{
+              openVote: votes.open,
+              cooldownUntil: votes.cooldownUntil,
+              onStart: () =>
+                status === 'authenticated' ? void votes.startVote() : openAuthModal('signin'),
+            }}
           />
           <QueuePanel
             roomId={roomId}
             queue={queue}
             canAdd={status === 'authenticated'}
             onNeedAuth={() => openAuthModal('signin')}
+            onRemove={
+              accessToken
+                ? (itemId) => void removeVideo(roomId, itemId, accessToken).catch(() => undefined)
+                : undefined
+            }
+            canRemoveItem={(item) =>
+              user !== null && (item.addedById === user.id || room.ownerId === user.id)
+            }
+          />
+          <VoteOverlay
+            vote={votes.open}
+            hasVoted={votes.hasVoted}
+            result={votes.result}
+            onCast={(voteId) =>
+              status === 'authenticated' ? votes.castVote(voteId) : openAuthModal('signin')
+            }
+            onDismissResult={votes.dismissResult}
           />
         </div>
 
@@ -87,11 +114,17 @@ function PlayerZone({
   viewers,
   playback,
   serverNowMs,
+  vote,
 }: {
   roomName: string;
   viewers: number;
   playback: PlaybackState | null;
   serverNowMs: () => number;
+  vote: {
+    openVote: unknown;
+    cooldownUntil: number;
+    onStart: () => void;
+  };
 }) {
   const playerRef = useRef<PlayerHandle | null>(null);
   const [muted, setMuted] = useState(true);
@@ -180,12 +213,42 @@ function PlayerZone({
             <p className="truncate font-medium text-zinc-100">{playback.title}</p>
             <PositionTicker playback={playback} serverNowMs={serverNowMs} />
           </div>
-          <span className="shrink-0 rounded bg-surface px-2 py-1 text-xs font-medium text-positive">
-            👥 {viewers} watching
-          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <VoteSkipButton vote={vote} />
+            <span className="rounded bg-surface px-2 py-1 text-xs font-medium text-positive">
+              👥 {viewers} watching
+            </span>
+          </div>
         </div>
       )}
     </div>
+  );
+}
+
+function VoteSkipButton({
+  vote,
+}: {
+  vote: { openVote: unknown; cooldownUntil: number; onStart: () => void };
+}) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1_000);
+    return () => clearInterval(timer);
+  }, []);
+  const coolingS = Math.ceil(Math.max(0, vote.cooldownUntil - now) / 1000);
+  const disabled = vote.openVote !== null || coolingS > 0;
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      data-testid="vote-skip-btn"
+      disabled={disabled}
+      onClick={vote.onStart}
+      title={coolingS > 0 ? `A vote just failed — wait ${coolingS}s` : undefined}
+    >
+      {coolingS > 0 ? `⏭ Skip (${coolingS}s)` : '⏭ Vote skip'}
+    </Button>
   );
 }
 
@@ -223,11 +286,15 @@ function QueuePanel({
   queue,
   canAdd,
   onNeedAuth,
+  onRemove,
+  canRemoveItem,
 }: {
   roomId: string;
   queue: QueueItem[];
   canAdd: boolean;
   onNeedAuth: () => void;
+  onRemove?: (itemId: string) => void;
+  canRemoveItem: (item: QueueItem) => boolean;
 }) {
   const [adding, setAdding] = useState(false);
 
@@ -255,7 +322,7 @@ function QueuePanel({
           {queue.map((item) => (
             <li
               key={item.itemId}
-              className="flex items-center gap-3 rounded-lg border border-transparent p-2 transition-colors hover:border-edge hover:bg-surface-raised/50"
+              className="group/item flex items-center gap-3 rounded-lg border border-transparent p-2 transition-colors hover:border-edge hover:bg-surface-raised/50"
             >
               <img src={item.thumbUrl} alt="" className="h-12 w-20 shrink-0 rounded object-cover" />
               <div className="min-w-0 flex-1">
@@ -265,6 +332,16 @@ function QueuePanel({
               <span title={`added by ${item.addedByNickname}`}>
                 <Avatar seed={item.addedByNickname} size="sm" />
               </span>
+              {onRemove && canRemoveItem(item) && (
+                <button
+                  type="button"
+                  aria-label="Remove from queue"
+                  onClick={() => onRemove(item.itemId)}
+                  className="focus-ring rounded p-1 text-zinc-600 opacity-0 transition-opacity hover:text-live group-hover/item:opacity-100"
+                >
+                  ✕
+                </button>
+              )}
             </li>
           ))}
         </ul>

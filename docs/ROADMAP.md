@@ -235,12 +235,15 @@ verified manually (headless Chromium lacks the codecs). Deploy half still deferr
       presence read from RTG's documented ZSET (the §5.3 quorum seam, explicit in code).
 - [ ] **4.2 RTG relay.** `vote:start`/`vote:cast` (idempotent per user) in; `vote:started/
 progress/finished` out. DoD: integration test 3 sockets.
-- [ ] **4.3 Web: vote overlay.** Floating card (spring-in), countdown ring, `4/7` progress, result
+- [x] **4.3 Web: vote overlay.** Floating card (spring-in), countdown ring, `4/7` progress, result
       toast; "Vote skip" button states (available/cooldown/open). DoD: §12.2 overlay spec.
-- [ ] **4.4 Queue polish.** Remove item (adder/owner, hover affordance), system messages for
+      ✅ SVG ring turns rose under 10s; trigger shows live cooldown countdown.
+- [x] **4.4 Queue polish.** Remove item (adder/owner, hover affordance), system messages for
       added/skipped/vote events, empty-queue idle state ("Be the first — add a video").
-- [ ] **4.5 E2E + deploy.** Playwright 3-context vote: 2/3 vote yes → both players jump to next
-      video together.
+      ✅ system chips are client-side synthesized from socket events (not persisted — v1 call).
+- [x] **4.5 E2E + deploy.** Playwright 3-context vote: 2/3 vote yes → both players jump to next
+      video together. ✅ 8s green: overlays fan out, trigger locks while open, quorum advances
+      ALL THREE players, result toast + chat system chip. (Deploy still owner-deferred.)
 
 **Phase DoD:** the full social loop — add, watch, vote, skip — works in production.
 
