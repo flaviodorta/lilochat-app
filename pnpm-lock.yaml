@@ -424,6 +424,9 @@ importers:
       react-hook-form:
         specifier: ^7.54.2
         version: 7.81.0(react@19.2.7)
+      socket.io-client:
+        specifier: ^4.8.3
+        version: 4.8.3
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.1

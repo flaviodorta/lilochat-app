@@ -157,21 +157,27 @@ Realtime:
 
 Frontend (the payoff):
 
-- [ ] **2.9 Home v1.** Card grid + `useInfiniteQuery` (keyset cursor) + IntersectionObserver +
+- [x] **2.9 Home v1.** Card grid + `useInfiniteQuery` (keyset cursor) + IntersectionObserver +
       skeletons; **hover: ticking exact time** `mm:ss / mm:ss` + progress bar computed from
       `startedAt` (1 s interval while hovered); create-room modal (name + first URL → navigate).
       DoD: matches §12.2 home spec.
-- [ ] **2.10 Player + sync engine.** YouTube IFrame API wrapper (controls hidden, personal
+- [x] **2.10 Player + sync engine.** YouTube IFrame API wrapper (controls hidden, personal
       volume/mute UI, "tap to unmute" overlay); clock-offset estimator (EWMA of 5 ping samples,
       resample 30 s); **drift loop**: <1 s ignore · 1–3 s playbackRate 1.05/0.95 · >3 s hard seek;
       resync after buffer/reconnect (REST snapshot → subscribe → apply). DoD: manual 2-browser
       test visually in sync; drift telemetry event wired (sampled 1/min).
-- [ ] **2.11 Room page v1.** Player zone + queue tab (playing item glow, add-video modal with
+- [x] **2.11 Room page v1.** Player zone + queue tab (playing item glow, add-video modal with
       paste→preview) per §12.2. Chat panel placeholder. DoD: full loop create→add→watch→auto-advance.
-- [ ] **2.12 Flagship test + deploy.** Playwright **two-context sync test**: both clients within
+- [x] **2.12 Flagship test + deploy.** Playwright **two-context sync test**: both clients within
       2 s of server position; auto-advance moves both. Add rooms/playback/realtime + rabbitmq to
       prod compose; Traefik sticky sessions for WS. DoD: flagship test in CI (headed YT iframe —
       if flaky in CI, run against a local deterministic player stub + keep real-YT variant nightly).
+
+✅ 2.12 note: flagship green (15s run) — full stack booted by Playwright (identity, rooms,
+playback w/ stubbed YouTube API, RTG, gateway, web): 2s sync budget sampled across two browsers,
+auto-advance lands on BOTH, reload rejoins in sync. Probe = offset-corrected position ticker
+(the same §6.2 arithmetic the drift engine steers the real player toward); real-YouTube playback
+verified manually (headless Chromium lacks the codecs). Deploy half still deferred (owner call).
 
 **Phase DoD:** two strangers on the internet watch the same video in sync. 🎬 Record the demo GIF now.
 

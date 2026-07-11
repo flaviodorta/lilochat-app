@@ -6,9 +6,11 @@ import { Wordmark } from '@/components/brand/wordmark';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/auth-context';
 import { Avatar } from '@/features/auth/avatar';
+import { CreateRoomModal } from '@/features/rooms/create-room-modal';
 
 export function Header() {
   const { status, user, openAuthModal, signOut } = useAuth();
+  const [creatingRoom, setCreatingRoom] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 border-b border-edge-soft bg-surface-page/70 backdrop-blur-xl">
@@ -39,11 +41,13 @@ export function Header() {
         <div className="ml-auto flex items-center gap-3">
           <Button
             size="sm"
-            onClick={() => status !== 'authenticated' && openAuthModal('signup')}
-            title="Rooms open in Phase 2"
+            onClick={() =>
+              status === 'authenticated' ? setCreatingRoom(true) : openAuthModal('signup')
+            }
           >
             + Create room
           </Button>
+          <CreateRoomModal open={creatingRoom} onClose={() => setCreatingRoom(false)} />
 
           {status === 'authenticated' && user ? (
             <UserChip nickname={user.nickname} onSignOut={() => void signOut()} />

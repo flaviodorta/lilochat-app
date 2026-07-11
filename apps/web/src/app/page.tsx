@@ -1,6 +1,6 @@
 import { Header } from '@/components/header';
+import { RoomsGrid } from '@/features/rooms/rooms-grid';
 
-/** Home v0: shell + skeleton grid. The real room directory arrives in Phase 2 (roadmap 2.9). */
 export default function HomePage() {
   return (
     <>
@@ -20,32 +20,10 @@ export default function HomePage() {
           </p>
         </section>
 
-        <section aria-label="Rooms" className="relative">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-            {Array.from({ length: 8 }, (_, i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="rounded-full border border-edge bg-surface/90 px-5 py-2.5 text-sm text-zinc-300 shadow-xl shadow-black/40 backdrop-blur">
-              🎬 Rooms open in <span className="font-semibold text-brand-soft">Phase 2</span> —
-              under construction
-            </span>
-          </div>
+        <section aria-label="Rooms">
+          <RoomsGrid />
         </section>
       </main>
     </>
-  );
-}
-
-function SkeletonCard() {
-  return (
-    <div className="overflow-hidden rounded-xl border border-edge bg-surface">
-      <div className="aspect-video animate-pulse bg-surface-raised/60" />
-      <div className="flex flex-col gap-2 p-4">
-        <div className="h-4 w-2/3 animate-pulse rounded bg-surface-raised/60" />
-        <div className="h-3 w-1/3 animate-pulse rounded bg-surface-raised/40" />
-      </div>
-    </div>
   );
 }
