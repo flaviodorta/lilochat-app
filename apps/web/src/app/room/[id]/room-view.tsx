@@ -127,7 +127,17 @@ function PlayerZone({
                   playerRef.current?.seekTo(expected);
                 }
               }}
+              onPaused={() => {
+                // the broadcast never pauses: rejoin the room's timeline and keep going
+                playerRef.current?.seekTo(
+                  positionSeconds(serverNowMs(), playback.startedAt, playback.durationS),
+                );
+                playerRef.current?.play();
+              }}
             />
+            {/* click shield (§3.2): the embed pauses on click — nobody interacts
+                with the player itself; our own overlays sit ABOVE this layer */}
+            <div aria-hidden className="absolute inset-0" />
             {muted && (
               <button
                 type="button"

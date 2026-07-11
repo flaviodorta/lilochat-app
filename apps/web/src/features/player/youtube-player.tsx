@@ -34,7 +34,13 @@ interface YtNamespace {
       };
     },
   ) => YtPlayer;
-  PlayerState: { PLAYING: number; BUFFERING: number; ENDED: number; UNSTARTED: number };
+  PlayerState: {
+    PLAYING: number;
+    PAUSED: number;
+    BUFFERING: number;
+    ENDED: number;
+    UNSTARTED: number;
+  };
 }
 declare global {
   interface Window {
@@ -77,17 +83,19 @@ export interface YouTubePlayerProps {
   startSeconds: number;
   onReady?: () => void;
   onBuffered?: () => void; // fired when playback resumes after buffering
+  /** Nobody can pause (§3.2): fired if a pause slips through (OS media keys…). */
+  onPaused?: () => void;
 }
 
 export const YouTubePlayer = forwardRef<PlayerHandle, YouTubePlayerProps>(function YouTubePlayer(
-  { videoId, startSeconds, onReady, onBuffered },
+  { videoId, startSeconds, onReady, onBuffered, onPaused },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YtPlayer | null>(null);
   const wasBuffering = useRef(false);
-  const initial = useRef({ videoId, startSeconds, onReady, onBuffered });
-  initial.current = { videoId, startSeconds, onReady, onBuffered };
+  const initial = useRef({ videoId, startSeconds, onReady, onBuffered, onPaused });
+  initial.current = { videoId, startSeconds, onReady, onBuffered, onPaused };
 
   useEffect(() => {
     let disposed = false;
@@ -116,6 +124,7 @@ export const YouTubePlayer = forwardRef<PlayerHandle, YouTubePlayerProps>(functi
               wasBuffering.current = false;
               initial.current.onBuffered?.();
             }
+            if (event.data === yt.PlayerState.PAUSED) initial.current.onPaused?.();
           },
         },
       });
