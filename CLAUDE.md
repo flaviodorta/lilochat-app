@@ -345,6 +345,10 @@ position(t) = clamp(t_server − startedAtMs, 0, durationMs)
   reload rejoins in-sync by construction.
 - **Autoplay reality**: browsers block unmuted autoplay. The player starts muted with a prominent
   "Tap to unmute" overlay — a deliberate, documented UX decision, not a bug.
+- **Embed reality (known limitation)**: YouTube may show a "confirm you're not a bot"
+  interstitial to viewers on flagged IPs / cookieless sessions. It is per-viewer, YouTube-side,
+  and rare for logged-in users; we mitigate with a declared `origin` and by never seek-storming.
+  Accepted trade-off of using the official player (zero streaming cost, full catalog).
 - **Telemetry**: clients report sampled drift measurements (1/min) → the sync-drift SLI (§4.1).
 
 The same tuple powers the home page hover feature for free: the card's REST payload includes
