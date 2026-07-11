@@ -31,6 +31,7 @@ import { PlaybackClient } from '../clients/playback.client.js';
 import { RoomsClient } from '../clients/rooms.client.js';
 import { CurrentUser } from '../security/current-user.decorator.js';
 import { JwtAuthGuard, type AuthenticatedUser } from '../security/jwt-auth.guard.js';
+import { RouteBucket } from '../security/route-bucket.decorator.js';
 
 /**
  * Public rooms API — API composition at the edge (course A38/CLAUDE.md §7.1):
@@ -106,6 +107,9 @@ export class RoomsController {
 
   @Post(':id/queue')
   @UseGuards(JwtAuthGuard)
+  // §9.1: 5 adds/min per user — the generic allowance can't be spent spamming
+  // the queue (each add can cost a YouTube API unit on cache miss)
+  @RouteBucket({ tag: 'queue-add', capacity: 5, refillPerSec: 5 / 60 })
   addToQueue(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,

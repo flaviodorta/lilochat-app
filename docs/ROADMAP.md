@@ -310,8 +310,15 @@ progress/finished` out. DoD: integration test 3 sockets. ✅ (box was stale — 
       deploy (rolling + rollback + provision checklist), restore (with rehearsal evidence),
       dlq-replay. Scratch-VPS variant + real-size timing re-run when deploy lands (deferred
       by owner decision); the local drill uses the exact prod flags and sidecar commands.
-- [ ] **6.4 Security pass.** Full checklist: headers/CSP, CORS exact origins, chat sanitization,
+- [x] **6.4 Security pass.** Full checklist: headers/CSP, CORS exact origins, chat sanitization,
       `pnpm audit` + Renovate, rate-limit review, secrets rotation drill, dependency pinning.
+      ✅ evidence in docs/security-pass.md (15-item checklist). Added this pass: CSP + security
+      headers on the web (YouTube/gateway/WS allowlist, verified by curl + E2E 5/5), queue-add
+      5/min @RouteBucket (§9.1 gap — 6th call 429s), postcss override (audit now 0), renovate.json.
+      JWT rotation REHEARSED live: old access 401, session survives one silent refresh (opaque
+      refresh tokens make rotation cheap — runbook secrets-rotation.md). Gotcha: tsx/esbuild
+      emits no design:paramtypes — Reflector needs explicit @Inject. Known/accepted items listed
+      (unsafe-inline hydration, orphan queue rows on fake roomIds, legacy YT key deletion=owner).
 - [ ] **6.5 Feature flags + graceful degradation drills.** Redis kill switches (chat, votes,
       room creation); chaos-lite: stop RabbitMQ (rooms stay watchable), stop Redis (documented
       behavior), restart each service under traffic (graceful drain verified).
