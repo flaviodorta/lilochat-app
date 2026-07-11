@@ -111,6 +111,9 @@ export const YouTubePlayer = forwardRef<PlayerHandle, YouTubePlayerProps>(functi
           rel: 0,
           iv_load_policy: 3,
           playsinline: 1,
+          // declared origin = embed trust signal (also required for correct
+          // postMessage security with the IFrame API)
+          origin: window.location.origin,
           start: Math.floor(initial.current.startSeconds),
         },
         events: {
