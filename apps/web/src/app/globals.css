@@ -1,0 +1,78 @@
+@import 'tailwindcss';
+
+/* ── LiloChat design tokens (CLAUDE.md §12 — "Neon Lounge", dark-first) ────── */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Luckiest Guy: EXCLUSIVELY for the wordmark (product-owner rule) */
+  --font-display: var(--font-luckiest), var(--font-inter), sans-serif;
+
+  /* brand — anchored on the logo purple */
+  --color-brand: #9333ea; /* purple-600 */
+  --color-brand-strong: #7e22ce; /* purple-700 — hover */
+  --color-brand-soft: #c084fc; /* purple-400 — links, focus */
+  --color-accent: #d946ef; /* fuchsia-500 — gradient end */
+
+  /* semantic */
+  --color-live: #f43f5e; /* rose-500 — LIVE badge, errors */
+  --color-positive: #34d399; /* emerald-400 — viewers, success */
+  --color-warning: #fbbf24; /* amber-400 — vote countdown, gold */
+
+  /* dark surface scale */
+  --color-surface-page: #09090b; /* zinc-950 */
+  --color-surface: #18181b; /* zinc-900 — cards, panels */
+  --color-surface-raised: #27272a; /* zinc-800 — hover, raised */
+  --color-edge: #27272a; /* 1px borders instead of heavy shadows */
+  --color-edge-soft: color-mix(in srgb, #3f3f46 60%, transparent);
+}
+
+@layer base {
+  body {
+    @apply bg-surface-page text-zinc-100 antialiased;
+  }
+
+  ::selection {
+    @apply bg-brand/40 text-white;
+  }
+
+  /* thin dark scrollbars everywhere */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-surface-raised) transparent;
+  }
+}
+
+@utility glow-brand {
+  box-shadow: 0 0 24px 0 color-mix(in srgb, var(--color-brand) 25%, transparent);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@utility animate-fade-in {
+  animation: fade-in 180ms ease-out;
+}
+
+@utility animate-pop-in {
+  animation: pop-in 200ms ease-out;
+}
+
+@utility focus-ring {
+  @apply outline-none focus-visible:ring-2 focus-visible:ring-brand-soft/70 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-page;
+}
