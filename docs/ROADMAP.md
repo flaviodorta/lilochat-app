@@ -103,9 +103,11 @@ Contracts first:
 
 Messaging backbone (first real use → build it now):
 
-- [ ] **2.2 nest-shared: messaging.** RabbitMQ publisher (topic exchange `lilochat.events`),
-      consumer decorator with: zod-parse, **idempotency** (Redis SETNX by eventId), retry
-      (3× expo backoff + jitter), DLQ per queue. DoD: integration tests w/ Testcontainers.
+- [x] **2.2 nest-shared: messaging.** RabbitMQ publisher (topic exchange `lilochat.events`),
+      `bindConsumer` with: zod-parse, **idempotency** (Redis SETNX by eventId, claim released on
+      failure), retry (3× expo backoff + full jitter), DLQ per queue. DoD: integration tests.
+      ✅ 4 integration tests vs real RabbitMQ+Redis (repo pattern: compose infra, not
+      Testcontainers — same guarantee, one less moving part; revisit for CI in 0.6).
 - [ ] **2.3 nest-shared: transactional outbox.** Outbox table convention + Prisma middleware
       helper + polling relay (batch 100, marks published). DoD: kill-the-relay test proves no loss.
 

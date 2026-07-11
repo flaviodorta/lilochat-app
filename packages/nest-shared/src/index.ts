@@ -8,3 +8,8 @@ export {
 } from './health/health.controller.js';
 export { HealthModule, type HealthModuleOptions } from './health/health.module.js';
 export { ZodValidationPipe } from './validation/zod-validation.pipe.js';
+export { makeDomainEvent } from './messaging/event-factory.js';
+export { LILOCHAT_DLX, LILOCHAT_EXCHANGE, RabbitMqBus } from './messaging/rabbitmq-bus.js';
+export { RedisIdempotencyStore, type IdempotencyStore } from './messaging/idempotency.js';
+export { bindConsumer, type ConsumerOptions } from './messaging/consumer.js';
+export { EVENT_BUS, MessagingModule } from './messaging/messaging.module.js';
