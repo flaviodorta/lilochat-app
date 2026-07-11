@@ -21,6 +21,8 @@ export interface RoomSync {
   playback: PlaybackState | null;
   queue: QueueItem[];
   connected: boolean;
+  /** The live socket (null for guests) — chat/presence hooks reuse it. */
+  socket: Socket | null;
   /** Server clock, offset-corrected (WS NTP-style when connected, REST otherwise). */
   serverNowMs: () => number;
 }
@@ -39,6 +41,7 @@ export function useRoomSync(
   const [playback, setPlayback] = useState<PlaybackState | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [connected, setConnected] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const offsetMs = useRef(0);
 
   // REST snapshot seeds state + a coarse offset (good even for guests, no WS)
@@ -56,6 +59,7 @@ export function useRoomSync(
       auth: { token: accessToken },
       transports: ['websocket'],
     });
+    setSocket(socket);
 
     const ping = () => socket.emit('sync:ping', { clientSentAt: Date.now() });
 
@@ -92,10 +96,11 @@ export function useRoomSync(
     return () => {
       clearInterval(resample);
       socket.disconnect();
+      setSocket(null);
     };
   }, [roomId, accessToken]);
 
   const serverNowMs = useCallback(() => Date.now() + offsetMs.current, []);
 
-  return { playback, queue, connected, serverNowMs };
+  return { playback, queue, connected, socket, serverNowMs };
 }

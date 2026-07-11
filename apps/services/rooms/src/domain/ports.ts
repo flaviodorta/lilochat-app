@@ -15,6 +15,7 @@ export interface CardPage {
 export interface RoomCardRepository {
   list(options: { limit: number; cursor?: string; q?: string }): Promise<CardPage>;
   findByRoomId(roomId: string): Promise<RoomCard | null>;
+  adjustViewers(roomId: string, delta: number): Promise<void>;
   applyVideoStarted(input: {
     roomId: string;
     videoId: string;

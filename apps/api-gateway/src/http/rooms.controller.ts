@@ -14,15 +14,19 @@ import {
 import {
   addToQueueBodySchema,
   createRoomBodySchema,
+  listMessagesQuerySchema,
   listRoomsQuerySchema,
   type AddToQueueBody,
   type CreateRoomBody,
+  type ListMessagesQuery,
+  type ListMessagesResponse,
   type ListRoomsQuery,
   type ListRoomsResponse,
   type QueueItem,
   type RoomDetail,
 } from '@lilochat/contracts';
 import { LOGGER, ZodValidationPipe, type Logger } from '@lilochat/nest-shared';
+import { ChatClient } from '../clients/chat.client.js';
 import { PlaybackClient } from '../clients/playback.client.js';
 import { RoomsClient } from '../clients/rooms.client.js';
 import { CurrentUser } from '../security/current-user.decorator.js';
@@ -38,6 +42,7 @@ export class RoomsController {
   constructor(
     @Inject(RoomsClient) private readonly rooms: RoomsClient,
     @Inject(PlaybackClient) private readonly playback: PlaybackClient,
+    @Inject(ChatClient) private readonly chat: ChatClient,
     @Inject(LOGGER) private readonly logger: Logger,
   ) {}
 
@@ -88,6 +93,15 @@ export class RoomsController {
       queue: state.queue,
       serverNow: state.serverNow,
     };
+  }
+
+  /** Public: history is readable by guests, like the room page itself. */
+  @Get(':id/messages')
+  listMessages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query(new ZodValidationPipe(listMessagesQuerySchema)) query: ListMessagesQuery,
+  ): Promise<ListMessagesResponse> {
+    return this.chat.listMessages(id, query);
   }
 
   @Post(':id/queue')

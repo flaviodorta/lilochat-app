@@ -4,6 +4,7 @@ import type { Redis } from 'ioredis';
 import { HealthModule, LoggerModule, TypedConfigModule } from '@lilochat/nest-shared';
 import { AvatarService } from './avatars/avatar.service.js';
 import { AvatarsController } from './avatars/avatars.controller.js';
+import { ChatClient } from './clients/chat.client.js';
 import { IdentityClient } from './clients/identity.client.js';
 import { PlaybackClient } from './clients/playback.client.js';
 import { RoomsClient } from './clients/rooms.client.js';
@@ -40,6 +41,7 @@ import { RateLimitGuard } from './security/rate-limit.guard.js';
     IdentityClient,
     RoomsClient,
     PlaybackClient,
+    ChatClient,
     AvatarService,
     JwtAuthGuard,
     { provide: APP_GUARD, useClass: RateLimitGuard }, // admission control runs first, on every route

@@ -7,6 +7,7 @@ export const roomsEnvSchema = z.object({
   REDIS_URL: z.string().min(1),
   /** Overridable so integration tests get isolated queues. */
   ROOMS_CONSUMER_QUEUE: z.string().default('rooms.playback-events'),
+  ROOMS_PRESENCE_QUEUE: z.string().default('rooms.presence-events'),
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });

@@ -53,6 +53,7 @@ beforeAll(async () => {
   process.env.RABBITMQ_URL = RABBITMQ_URL;
   process.env.REDIS_URL = 'redis://localhost:6380/4';
   process.env.ROOMS_CONSUMER_QUEUE = `it.${RUN}.rooms.playback-events`;
+  process.env.ROOMS_PRESENCE_QUEUE = `it.${RUN}.rooms.presence-events`;
   process.env.NODE_ENV = 'test';
 
   const { AppModule } = await import('../src/app.module.js');
@@ -138,6 +139,52 @@ describe('rooms service (real Postgres + RabbitMQ + Redis)', () => {
     const res = await request(app.getHttpServer()).get('/rooms?q=LOFI').expect(200);
     const names = (res.body.items as Array<{ name: string }>).map((item) => item.name).sort();
     expect(names).toEqual(['Lofi Beats 24/7', 'deep lofi zone']);
+  });
+
+  it('consumes presence events into durable viewer counts (clamped at zero)', async () => {
+    await wipeTables();
+    const room = await createRoom('Presence room');
+    const joined = (userId: string) =>
+      makeDomainEvent('presence.user.joined', {
+        roomId: room.id,
+        userId,
+        sessionId: randomUUID(),
+        at: new Date().toISOString(),
+      });
+
+    const event = joined(randomUUID());
+    bus.publish(event);
+    bus.publish(event); // duplicate — idempotency must hold the count at 1
+    bus.publish(joined(randomUUID()));
+
+    const deadline = Date.now() + 8_000;
+    let viewers = 0;
+    while (viewers !== 2 && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      const res = await request(app.getHttpServer()).get(`/rooms/${room.id}`).expect(200);
+      viewers = res.body.card.viewers;
+    }
+    expect(viewers).toBe(2);
+
+    // three lefts (one spurious) → clamped at zero, never negative
+    for (let i = 0; i < 3; i += 1) {
+      bus.publish(
+        makeDomainEvent('presence.user.left', {
+          roomId: room.id,
+          userId: randomUUID(),
+          sessionId: randomUUID(),
+          at: new Date().toISOString(),
+          durationS: 10,
+        }),
+      );
+    }
+    const zeroDeadline = Date.now() + 8_000;
+    while (viewers !== 0 && Date.now() < zeroDeadline) {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      const res = await request(app.getHttpServer()).get(`/rooms/${room.id}`).expect(200);
+      viewers = res.body.card.viewers;
+    }
+    expect(viewers).toBe(0);
   });
 
   it('consumes playback.video.started and updates the card read model', async () => {

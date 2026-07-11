@@ -4,11 +4,13 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { RoomCard } from './room-card';
 import { listRooms } from './api';
+import { useLobbyViewers } from './use-lobby';
 import { useServerClock } from './use-server-clock';
 
 /** Infinite-scroll directory (§7.1 keyset cursor + IntersectionObserver). */
 export function RoomsGrid({ q }: { q?: string }) {
   const { observeServerNow, serverNowMs } = useServerClock();
+  useLobbyViewers(); // live card patches from /lobby (§7.2)
 
   const query = useInfiniteQuery({
     queryKey: ['rooms', q ?? ''],

@@ -43,6 +43,14 @@ export class PrismaRoomCardRepository implements RoomCardRepository {
     return row ? this.toCard(row) : null;
   }
 
+  /** Session-based counter, clamped at zero (RTG crash loses decrements; the
+   *  ghost sweeper's left events self-heal the drift — documented trade-off). */
+  async adjustViewers(roomId: string, delta: number): Promise<void> {
+    await this.prisma.$executeRaw`
+      UPDATE room_cards SET viewers = GREATEST(0, viewers + ${delta}), updated_at = NOW()
+      WHERE room_id = ${roomId}::uuid`;
+  }
+
   async applyVideoStarted(input: {
     roomId: string;
     videoId: string;

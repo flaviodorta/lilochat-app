@@ -13,6 +13,8 @@ export const rtgEnvSchema = z.object({
   /** Presence session TTL — a closed laptop 'leaves' within this window (§6.5). */
   PRESENCE_TTL_MS: z.coerce.number().int().positive().default(75_000),
   PRESENCE_SWEEP_MS: z.coerce.number().int().positive().default(15_000),
+  /** Lobby fan-out cap: at most one room:summary per room per window (§4.3). */
+  LOBBY_THROTTLE_MS: z.coerce.number().int().positive().default(10_000),
   /** Overridable so integration tests get isolated queues. */
   RTG_CONSUMER_QUEUE: z.string().default('rtg.playback-events'),
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),

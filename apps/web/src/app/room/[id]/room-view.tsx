@@ -12,6 +12,7 @@ import { useDriftCorrection } from '@/features/player/use-drift-correction';
 import { getRoom } from '@/features/rooms/api';
 import { AddVideoModal } from '@/features/rooms/add-video-modal';
 import { useRoomSync } from '@/features/rooms/use-room-sync';
+import { ChatPanel } from '@/features/chat/chat-panel';
 import { formatClock, positionSeconds } from '@/features/rooms/use-server-clock';
 
 export function RoomView({ roomId }: { roomId: string }) {
@@ -22,7 +23,11 @@ export function RoomView({ roomId }: { roomId: string }) {
     queryFn: () => getRoom(roomId),
     refetchOnWindowFocus: false,
   });
-  const { playback, queue, serverNowMs } = useRoomSync(roomId, detailQuery.data, accessToken);
+  const { playback, queue, socket, serverNowMs } = useRoomSync(
+    roomId,
+    detailQuery.data,
+    accessToken,
+  );
 
   if (detailQuery.isLoading) {
     return (
@@ -66,11 +71,12 @@ export function RoomView({ roomId }: { roomId: string }) {
           />
         </div>
 
-        {/* Chat lands here in Phase 3 (roadmap 3.6) */}
-        <aside className="hidden h-fit flex-col gap-2 rounded-xl border border-edge bg-surface p-5 lg:flex">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">Chat</h2>
-          <p className="py-10 text-center text-sm text-zinc-500">💬 Live chat arrives in Phase 3</p>
-        </aside>
+        <ChatPanel
+          roomId={roomId}
+          socket={socket}
+          canChat={status === 'authenticated'}
+          onNeedAuth={() => openAuthModal('signin')}
+        />
       </main>
     </>
   );

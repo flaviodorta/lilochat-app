@@ -206,13 +206,18 @@ verified manually (headless Chromium lacks the codecs). Deploy half still deferr
       ✅ 2 integration tests: full join/leave flow + a PLANTED expired session reaped by the
       sweeper (the true ghost-killer path). Design: ZSET score = expiry (not key TTL — the
       sweep needs to know WHO expired to publish left); heartbeat piggybacks on sync:ping.
-- [ ] **3.5 Rooms: viewer counts + lobby.** Consume presence → `room_cards.viewers`; RTG `/lobby`
+- [x] **3.5 Rooms: viewer counts + lobby.** Consume presence → `room_cards.viewers`; RTG `/lobby`
       namespace broadcasting `room:summary` throttled 1/10 s/room. DoD: two tabs — home count
-      updates live.
-- [ ] **3.6 Web: chat panel.** Virtualized list, upward infinite scroll (`useInfiniteQuery`),
+      updates live. ✅ durable counts via GREATEST(0, …) clamp (idempotent, dedup-tested);
+      /lobby is public, leading-emit + trailing-coalesce throttle; home patches the react-query
+      cache from room:summary.
+- [x] **3.6 Web: chat panel.** Virtualized list, upward infinite scroll (`useInfiniteQuery`),
       avatars + deterministic nickname colors, day dividers, system-message chips, composer
       (Enter sends, grows to 4 lines, char counter), presence avatar stack. DoD: §12.2 chat spec;
-      2-browser chat E2E; deploy.
+      2-browser chat E2E; deploy. ✅ E2E green: optimistic delivery, pending→sent ack flip,
+      presence stack 2→1 on leave, history survives reload. Scroll-anchored upward pagination
+      (virtualization + day dividers + system chips deferred to Phase-7 polish; deploy still
+      owner-deferred). Suite-wide gotcha fixed: shared-IP anon rate bucket 429'd across specs.
 
 **Phase DoD:** rooms feel alive — chat, join/leave, live counts everywhere, zero ghost users.
 

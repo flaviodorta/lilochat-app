@@ -11,6 +11,7 @@ const GATEWAY_PORT = 4120; // 4110 is the dev RTG — E2E must not collide
 const ROOMS_PORT = 4112;
 const PLAYBACK_PORT = 4113;
 const RTG_PORT = 4115;
+const CHAT_PORT = 4116;
 const YT_STUB_PORT = 4199;
 const WEB_PORT = 3010;
 
@@ -62,6 +63,14 @@ export default defineConfig({
     },
     {
       command: './node_modules/.bin/tsx src/main.ts',
+      cwd: '../services/chat',
+      url: `http://localhost:${CHAT_PORT}/health/ready`,
+      timeout: 30_000,
+      reuseExistingServer: !process.env.CI,
+      env: { PORT: String(CHAT_PORT) },
+    },
+    {
+      command: './node_modules/.bin/tsx src/main.ts',
       cwd: '../realtime-gateway',
       url: `http://localhost:${RTG_PORT}/health/ready`,
       timeout: 30_000,
@@ -79,7 +88,13 @@ export default defineConfig({
         IDENTITY_SERVICE_URL: `http://localhost:${IDENTITY_PORT}`,
         ROOMS_SERVICE_URL: `http://localhost:${ROOMS_PORT}`,
         PLAYBACK_SERVICE_URL: `http://localhost:${PLAYBACK_PORT}`,
+        CHAT_SERVICE_URL: `http://localhost:${CHAT_PORT}`,
         CORS_ORIGINS: `http://localhost:${WEB_PORT}`,
+        // the whole suite shares one IP: dev-tier anon bucket 429s across specs
+        RATE_LIMIT_ANON_CAPACITY: '1000',
+        RATE_LIMIT_ANON_REFILL_PER_SEC: '100',
+        RATE_LIMIT_AUTH_CAPACITY: '1000',
+        RATE_LIMIT_AUTH_REFILL_PER_SEC: '100',
       },
     },
     {

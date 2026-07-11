@@ -6,6 +6,8 @@ import {
   chatMessagePersistedEvent,
   chatSendPayloadSchema,
   CHAT_SOCKET_EVENTS,
+  LOBBY_EVENTS,
+  LOBBY_NAMESPACE,
   queueUpdatedEvent,
   roomJoinPayloadSchema,
   SOCKET_EVENTS,
@@ -52,6 +54,36 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
   const presence = new PresenceStore(redis, config.PRESENCE_TTL_MS);
   const chatBucket = new TokenBucket(redis);
 
+  // ── /lobby: public live viewer counts for the home directory (§7.2) ──────
+  // Throttled per room (§4.3 bottleneck #1): leading emit + trailing coalesce.
+  const lobby = io.of(LOBBY_NAMESPACE);
+  const lobbyCooldown = new Map<string, { timer: NodeJS.Timeout; dirty: boolean }>();
+  const emitLobbySummary = (roomId: string): void => {
+    void presence.list(roomId, Date.now()).then((users) => {
+      lobby.emit(LOBBY_EVENTS.roomSummary, { roomId, viewers: users.length });
+    });
+  };
+  const scheduleLobbySummary = (roomId: string): void => {
+    const pending = lobbyCooldown.get(roomId);
+    if (pending) {
+      pending.dirty = true;
+      return;
+    }
+    emitLobbySummary(roomId);
+    const entry = {
+      dirty: false,
+      timer: setTimeout(() => {
+        const current = lobbyCooldown.get(roomId);
+        lobbyCooldown.delete(roomId);
+        if (current?.dirty) scheduleLobbySummary(roomId);
+      }, config.LOBBY_THROTTLE_MS),
+    };
+    lobbyCooldown.set(roomId, entry);
+  };
+  io.on('close', () => {
+    for (const { timer } of lobbyCooldown.values()) clearTimeout(timer);
+  });
+
   const publishLeft = (roomId: string, session: PresenceSession, at: Date): void => {
     bus.publish(
       makeDomainEvent(
@@ -67,6 +99,7 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
       ),
     );
     rooms.to(roomKey(roomId)).emit(CHAT_SOCKET_EVENTS.presenceLeft, { userId: session.userId });
+    scheduleLobbySummary(roomId);
   };
 
   rooms.on('connection', (socket: Socket) => {
@@ -110,6 +143,7 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
           roomId,
           users: await presence.list(roomId, now.getTime()),
         });
+        scheduleLobbySummary(roomId);
         ack?.({ ok: true });
       })();
     });

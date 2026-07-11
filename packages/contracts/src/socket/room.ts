@@ -3,6 +3,9 @@ import { playbackStateSchema, queueItemSchema } from '../dto/rooms.js';
 
 /** Socket.io contract for the `/room` namespace (CLAUDE.md §7.2) — Phase 2 subset. */
 export const ROOM_NAMESPACE = '/room';
+/** Public namespace: live card patches for the home directory (§7.2). */
+export const LOBBY_NAMESPACE = '/lobby';
+export const LOBBY_EVENTS = { roomSummary: 'room:summary' } as const;
 
 export const SOCKET_EVENTS = {
   // client → server

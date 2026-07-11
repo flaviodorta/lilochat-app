@@ -7,7 +7,11 @@ import {
 } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { Redis } from 'ioredis';
-import { videoStartedEvent } from '@lilochat/contracts';
+import {
+  presenceUserJoinedEvent,
+  presenceUserLeftEvent,
+  videoStartedEvent,
+} from '@lilochat/contracts';
 import {
   bindConsumer,
   EVENT_BUS,
@@ -112,6 +116,20 @@ export class RoomsModule implements OnApplicationBootstrap, OnApplicationShutdow
           durationS,
           startedAt: new Date(startedAt),
         });
+      },
+      idempotency: new RedisIdempotencyStore(this.redis, { prefix: 'rooms' }),
+      logger: this.logger,
+    });
+
+    // presence → durable viewer counts on the card read model (§6.5)
+    const { z } = await import('zod');
+    await bindConsumer(this.bus, {
+      queue: this.config.ROOMS_PRESENCE_QUEUE,
+      bindings: ['presence.user.joined', 'presence.user.left'],
+      schema: z.union([presenceUserJoinedEvent, presenceUserLeftEvent]),
+      handler: async (event) => {
+        const delta = event.name === 'presence.user.joined' ? 1 : -1;
+        await this.cards.adjustViewers(event.payload.roomId, delta);
       },
       idempotency: new RedisIdempotencyStore(this.redis, { prefix: 'rooms' }),
       logger: this.logger,

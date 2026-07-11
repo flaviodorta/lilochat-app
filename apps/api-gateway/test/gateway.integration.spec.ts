@@ -98,6 +98,7 @@ beforeAll(async () => {
   process.env.IDENTITY_SERVICE_URL = `http://127.0.0.1:${stubPort}`;
   process.env.ROOMS_SERVICE_URL = `http://127.0.0.1:${stubPort}`;
   process.env.PLAYBACK_SERVICE_URL = `http://127.0.0.1:${stubPort}`;
+  process.env.CHAT_SERVICE_URL = `http://127.0.0.1:${stubPort}`;
   process.env.REDIS_URL = 'redis://localhost:6380/1'; // db 1: isolated from dev data
   process.env.JWT_PUBLIC_KEY = Buffer.from(publicKey).toString('base64');
   process.env.NODE_ENV = 'test';

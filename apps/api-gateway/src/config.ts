@@ -5,6 +5,7 @@ export const gatewayEnvSchema = z.object({
   IDENTITY_SERVICE_URL: z.string().url(),
   ROOMS_SERVICE_URL: z.string().url(),
   PLAYBACK_SERVICE_URL: z.string().url(),
+  CHAT_SERVICE_URL: z.string().url(),
   REDIS_URL: z.string().min(1),
   /** base64-encoded SPKI PEM — the verify half of identity's RS256 pair. */
   JWT_PUBLIC_KEY: z.string().min(1),
