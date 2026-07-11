@@ -1,5 +1,7 @@
 import amqp, { type Channel } from 'amqplib';
+import { metrics } from '@opentelemetry/api';
 import type { DomainEvent } from '@lilochat/contracts';
+import { injectTraceHeaders } from '../observability/otel.js';
 
 /** Topic exchange for all domain events; routing key = event name (CLAUDE.md §6.1). */
 export const LILOCHAT_EXCHANGE = 'lilochat.events';
@@ -9,6 +11,10 @@ export const LILOCHAT_DLX = 'lilochat.dlx';
 type AmqpConnection = Awaited<ReturnType<typeof amqp.connect>>;
 
 export class RabbitMqBus {
+  private readonly published = metrics
+    .getMeter('lilochat.messaging')
+    .createCounter('lilochat.events.published', { description: 'Domain events published' });
+
   private constructor(
     private readonly connection: AmqpConnection,
     readonly channel: Channel,
@@ -28,7 +34,10 @@ export class RabbitMqBus {
       contentType: 'application/json',
       messageId: event.eventId,
       timestamp: Math.floor(new Date(event.occurredAt).getTime() / 1000),
+      // W3C traceparent rides the message (§10) — consumers continue the trace
+      headers: injectTraceHeaders(),
     });
+    this.published.add(1, { 'event.name': event.name });
   }
 
   async close(): Promise<void> {

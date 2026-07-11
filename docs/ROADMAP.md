@@ -233,8 +233,10 @@ verified manually (headless Chromium lacks the codecs). Deploy half still deferr
       instant pass, double-resolution no-op) + integration: quorum → the video actually
       advances. Design: durable votes in PG (outbox events), live ballots in Redis SET,
       presence read from RTG's documented ZSET (the §5.3 quorum seam, explicit in code).
-- [ ] **4.2 RTG relay.** `vote:start`/`vote:cast` (idempotent per user) in; `vote:started/
-progress/finished` out. DoD: integration test 3 sockets.
+- [x] **4.2 RTG relay.** `vote:start`/`vote:cast` (idempotent per user) in; `vote:started/
+progress/finished` out. DoD: integration test 3 sockets. ✅ (box was stale — built with 4.1:
+      HTTP relay into playback's internal vote API, errors pass through to the socket ack;
+      vote.* bus events fan out via consumers. Verified end-to-end by the 3-browser 4.5 E2E.)
 - [x] **4.3 Web: vote overlay.** Floating card (spring-in), countdown ring, `4/7` progress, result
       toast; "Vote skip" button states (available/cooldown/open). DoD: §12.2 overlay spec.
       ✅ SVG ring turns rose under 10s; trigger shows live cooldown countdown.
@@ -274,11 +276,21 @@ progress/finished` out. DoD: integration test 3 sockets.
 
 ## Phase 6 — Production Hardening
 
-- [ ] **6.1 Observability.** OTel SDK all services (HTTP + RabbitMQ header propagation),
+- [x] **6.1 Observability.** OTel SDK all services (HTTP + RabbitMQ header propagation),
       Collector in prod compose, Grafana stack live; **SLO dashboard** (§4.1 incl. sync-drift
       histogram from client telemetry), per-service dashboards; alerts: burn-rate, DLQ>0 5 min,
       outbox lag>30 s, drift p95, cert expiry. Datadog exporter block documented (off).
-      DoD: one click from alert → trace → logs.
+      DoD: one click from alert → trace → logs. ✅ hand-rolled instrumentation at the four
+      edges (HTTP middleware, internal client, bus publish, bus consume) instead of
+      auto-instrumentations — ESM loader hooks fight tsx, and manual W3C propagation IS the
+      §10 story. Verified live: gateway+identity spans join in ONE Tempo trace; metrics carry
+      service_name (resource_to_telemetry_conversion); logs in Loki with trace ids (unit-proven
+      spanContext on records); rabbitmq_prometheus per-queue depth; SLO dashboard + 5 alert
+      rules file-provisioned (drift SLI gets its own ★ panel per §4.1). New: sync:drift client
+      telemetry (was promised in 2.10, now real). Deferred with the deploy decision: obs stack
+      in compose.prod, cert-expiry alert (needs Traefik), per-service dashboards beyond SLO
+      (Grafana explore covers dev). Gotcha: metrics api resolves globals EAGERLY — instruments
+      must be created after startOtel, never at ESM module scope.
 - [ ] **6.2 Load test.** k6 WS scenario (1k sockets across 50 rooms + chat storm in one hot room);
       fix what breaks; write `docs/load-test-report.md` (portfolio artifact).
 - [ ] **6.3 Backups & DR.** WAL archiving to object storage + nightly base backup; **restore

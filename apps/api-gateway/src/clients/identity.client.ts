@@ -1,4 +1,4 @@
-import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type {
   AuthSession,
   LoginBody,
@@ -7,6 +7,7 @@ import type {
   UserProfile,
 } from '@lilochat/contracts';
 import { GATEWAY_CONFIG, type GatewayConfig } from '../config.js';
+import { internalRequest } from './internal-http.js';
 
 /**
  * Internal HTTP client for the identity service. Downstream error bodies
@@ -45,16 +46,7 @@ export class IdentityClient {
     return this.request('PATCH', `/users/${userId}/nickname`, body);
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method,
-      headers: body === undefined ? undefined : { 'content-type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-
-    if (response.status === 204) return undefined as T;
-    const data: unknown = await response.json().catch(() => ({}));
-    if (!response.ok) throw new HttpException(data as object, response.status);
-    return data as T;
+  private request<T>(method: string, path: string, body?: unknown): Promise<T> {
+    return internalRequest(this.baseUrl, method, path, body);
   }
 }

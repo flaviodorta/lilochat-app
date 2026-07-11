@@ -22,3 +22,5 @@ export {
   type OutboxRelayOptions,
   type OutboxRow,
 } from './messaging/outbox.js';
+export { startOtel, injectTraceHeaders } from './observability/otel.js';
+export { otelHttpMiddleware } from './observability/http-middleware.js';

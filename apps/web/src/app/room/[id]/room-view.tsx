@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PlaybackState, QueueItem } from '@lilochat/contracts';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,13 @@ export function RoomView({ roomId }: { roomId: string }) {
     accessToken,
   );
   const votes = useRoomVotes(roomId, socket);
+
+  // sampled drift telemetry (§4.1) — feeds the SLO dashboard's sync-drift SLI
+  const socketRef = useRef(socket);
+  socketRef.current = socket;
+  const onDriftSample = useCallback((driftMs: number) => {
+    socketRef.current?.emit('sync:drift', { driftMs });
+  }, []);
 
   if (detailQuery.isLoading) {
     return (
@@ -66,6 +73,7 @@ export function RoomView({ roomId }: { roomId: string }) {
             viewers={room.viewers}
             playback={playback}
             serverNowMs={serverNowMs}
+            onDriftSample={onDriftSample}
             vote={{
               openVote: votes.open,
               cooldownUntil: votes.cooldownUntil,
@@ -114,12 +122,14 @@ function PlayerZone({
   viewers,
   playback,
   serverNowMs,
+  onDriftSample,
   vote,
 }: {
   roomName: string;
   viewers: number;
   playback: PlaybackState | null;
   serverNowMs: () => number;
+  onDriftSample?: (driftMs: number) => void;
   vote: {
     openVote: unknown;
     cooldownUntil: number;
@@ -128,7 +138,7 @@ function PlayerZone({
 }) {
   const playerRef = useRef<PlayerHandle | null>(null);
   const [muted, setMuted] = useState(true);
-  useDriftCorrection(playerRef, playback, serverNowMs);
+  useDriftCorrection(playerRef, playback, serverNowMs, onDriftSample);
 
   // room advanced to another video → load it at the right position
   const currentItem = useRef<string | null>(null);

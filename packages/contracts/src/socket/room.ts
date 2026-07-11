@@ -11,6 +11,7 @@ export const SOCKET_EVENTS = {
   // client → server
   roomJoin: 'room:join',
   syncPing: 'sync:ping',
+  syncDrift: 'sync:drift',
   // server → client
   playbackStarted: 'playback:started',
   queueUpdated: 'queue:updated',
@@ -33,6 +34,16 @@ export const syncPongSchema = z.object({
   serverNow: z.number(), // server epoch ms
 });
 export type SyncPong = z.infer<typeof syncPongSchema>;
+
+/**
+ * Sampled drift telemetry (§4.1 — the product-defining SLI): clients report
+ * player position − server timeline (ms, signed) ~1/min; RTG feeds the
+ * sync-drift histogram behind the SLO dashboard.
+ */
+export const syncDriftReportSchema = z.object({
+  driftMs: z.number().finite().min(-3_600_000).max(3_600_000),
+});
+export type SyncDriftReport = z.infer<typeof syncDriftReportSchema>;
 
 export const playbackStartedPayloadSchema = playbackStateSchema.extend({
   roomId: z.string().uuid(),

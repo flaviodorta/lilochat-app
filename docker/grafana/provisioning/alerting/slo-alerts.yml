@@ -1,0 +1,146 @@
+apiVersion: 1
+
+# SLO alerts (§4.1/§10). File-provisioned so a fresh `--profile obs` stack
+# comes up already armed — alerting is config, not clicking.
+groups:
+  - orgId: 1
+    name: slo
+    folder: LiloChat
+    interval: 1m
+    rules:
+      - uid: lilochat-dlq-depth
+        title: DLQ depth > 0
+        condition: C
+        for: 5m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: 'Dead-lettered events are waiting — replay runbook: docs/runbooks/'
+        labels:
+          severity: page
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: sum(rabbitmq_detailed_queue_messages{queue=~".+\\.dlq"}) or vector(0)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+
+      - uid: lilochat-outbox-lag
+        title: Outbox lag > 30s
+        condition: C
+        for: 2m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: 'An outbox relay is falling behind — read models and acks are going stale'
+        labels:
+          severity: page
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: max(lilochat_outbox_lag_seconds) or vector(0)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [30] }
+
+      - uid: lilochat-sync-drift-p95
+        title: Sync drift p95 > 2s
+        condition: C
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: 'The product-defining SLI is breaching — rooms are falling out of sync'
+        labels:
+          severity: page
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: histogram_quantile(0.95, sum by (le) (rate(lilochat_sync_drift_milliseconds_bucket[15m])))
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [2000] }
+
+      # Fast-burn availability: 5xx ratio > 5% over 5m burns the monthly 0.5%
+      # error budget ~14×; the slow-burn pair (1% over 1h) warns instead of pages.
+      - uid: lilochat-availability-fast-burn
+        title: Availability fast burn (5xx > 5% / 5m)
+        condition: C
+        for: 5m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: 'Error budget burning fast — gateway 5xx ratio over 5% for 5 minutes'
+        labels:
+          severity: page
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: (sum(rate(http_server_request_duration_milliseconds_count{http_response_status_code=~"5.."}[5m])) or vector(0)) / sum(rate(http_server_request_duration_milliseconds_count[5m]))
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.05] }
+
+      - uid: lilochat-availability-slow-burn
+        title: Availability slow burn (5xx > 1% / 1h)
+        condition: C
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: 'Error budget burning slowly — sustained gateway 5xx ratio over 1%'
+        labels:
+          severity: warn
+        data:
+          - refId: A
+            relativeTimeRange: { from: 3600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: (sum(rate(http_server_request_duration_milliseconds_count{http_response_status_code=~"5.."}[1h])) or vector(0)) / sum(rate(http_server_request_duration_milliseconds_count[1h]))
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.01] }

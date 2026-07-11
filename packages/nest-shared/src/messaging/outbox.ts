@@ -1,3 +1,4 @@
+import { metrics } from '@opentelemetry/api';
 import type { DomainEvent } from '@lilochat/contracts';
 import type { Logger } from 'pino';
 import type { RabbitMqBus } from './rabbitmq-bus.js';
@@ -65,8 +66,17 @@ export interface OutboxRelayOptions {
 export class OutboxRelay {
   private timer: ReturnType<typeof setInterval> | null = null;
   private ticking = false;
+  /** Age of the oldest event seen unpublished on the last tick (§10 alert: >30 s). */
+  private lagSeconds = 0;
 
-  constructor(private readonly options: OutboxRelayOptions) {}
+  constructor(private readonly options: OutboxRelayOptions) {
+    const meter = metrics.getMeter('lilochat.messaging');
+    meter
+      .createObservableGauge('lilochat.outbox.lag.seconds', {
+        description: 'Age of the oldest unpublished outbox event',
+      })
+      .addCallback((observable) => observable.observe(this.lagSeconds));
+  }
 
   start(): void {
     if (this.timer) return;
@@ -85,6 +95,8 @@ export class OutboxRelay {
     try {
       const { client, bus, logger } = this.options;
       const batch = await client.fetchUnpublished(this.options.batchSize ?? 100);
+      const oldest = batch[0];
+      this.lagSeconds = oldest ? Math.max(0, (Date.now() - oldest.occurredAt.getTime()) / 1000) : 0;
       if (batch.length === 0) return;
 
       for (const row of batch) {

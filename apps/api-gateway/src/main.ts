@@ -4,15 +4,17 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { LOGGER, type Logger } from '@lilochat/nest-shared';
+import { LOGGER, otelHttpMiddleware, startOtel, type Logger } from '@lilochat/nest-shared';
 import { AppModule } from './app.module.js';
 import { GATEWAY_CONFIG, type GatewayConfig } from './config.js';
 
 async function bootstrap(): Promise<void> {
+  startOtel('api-gateway'); // ADR-011 — before Nest so every instrument resolves the real provider
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn'],
   });
   app.enableShutdownHooks();
+  app.use(otelHttpMiddleware('api-gateway'));
 
   const config = app.get<GatewayConfig>(GATEWAY_CONFIG);
   const logger = app.get<Logger>(LOGGER);

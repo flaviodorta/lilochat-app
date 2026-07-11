@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
+import { context as otelContext, metrics, SpanKind, trace } from '@opentelemetry/api';
 import { Redis } from 'ioredis';
 import type { Server, Socket } from 'socket.io';
 import {
@@ -16,12 +17,14 @@ import {
   queueUpdatedEvent,
   roomJoinPayloadSchema,
   SOCKET_EVENTS,
+  syncDriftReportSchema,
   syncPingSchema,
   videoStartedEvent,
 } from '@lilochat/contracts';
 import {
   bindConsumer,
   EVENT_BUS,
+  injectTraceHeaders,
   LOGGER,
   makeDomainEvent,
   RedisIdempotencyStore,
@@ -55,6 +58,33 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
 
   const { io, rooms } = createRoomNamespace({ httpServer: app.getHttpServer(), config, logger });
 
+  // ── product metrics (§10): drift SLI histogram + live gauges ─────────────
+  const meter = metrics.getMeter('realtime-gateway');
+  const driftHistogram = meter.createHistogram('lilochat.sync.drift', {
+    unit: 'ms',
+    description: 'Client-reported |player position − server timeline| (§4.1 SLI)',
+  });
+  const chatMessages = meter.createCounter('lilochat.chat.messages', {
+    description: 'Chat messages accepted by the relay',
+  });
+  meter
+    .createObservableGauge('lilochat.ws.connections', {
+      description: 'Sockets connected to the /room namespace on this instance',
+    })
+    .addCallback((observable) => observable.observe(rooms.sockets.size));
+  meter
+    .createObservableGauge('lilochat.rooms.active', {
+      description: 'Rooms with at least one connected viewer on this instance',
+    })
+    .addCallback((observable) => {
+      const active = new Set<string>();
+      for (const socket of rooms.sockets.values()) {
+        const roomId = (socket.data as RoomSocketData).roomId;
+        if (roomId) active.add(roomId);
+      }
+      observable.observe(active.size);
+    });
+
   const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 });
   const idempotency = new RedisIdempotencyStore(redis, { prefix: 'rtg' });
   const presence = new PresenceStore(redis, config.PRESENCE_TTL_MS);
@@ -64,7 +94,7 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
   const playbackVotes = async (path: string, body: unknown): Promise<Record<string, unknown>> => {
     const response = await fetch(`${config.PLAYBACK_SERVICE_URL}${path}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: injectTraceHeaders({ 'content-type': 'application/json' }) as Record<string, string>,
       body: JSON.stringify(body),
     });
     const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
@@ -181,31 +211,46 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
       }
     });
 
-    // chat write path (§6.3): validate → rate limit → optimistic broadcast → event
+    // sampled drift telemetry (§4.1) → the SLO dashboard's defining histogram
+    socket.on(SOCKET_EVENTS.syncDrift, (payload: unknown) => {
+      const parsed = syncDriftReportSchema.safeParse(payload);
+      if (!parsed.success) return;
+      driftHistogram.record(Math.abs(parsed.data.driftMs));
+    });
+
+    // chat write path (§6.3): validate → rate limit → optimistic broadcast → event.
+    // Runs inside a span so the submitted event carries traceparent (§10) and
+    // chat-service's consume span joins the SAME trace across the bus.
     socket.on(CHAT_SOCKET_EVENTS.chatSend, (payload: unknown, ack?: (r: unknown) => void) => {
-      void (async () => {
-        const parsed = chatSendPayloadSchema.safeParse(payload);
-        if (!parsed.success) return ack?.({ ok: false, error: 'invalid_payload' });
-        if (!data.roomId) return ack?.({ ok: false, error: 'not_in_a_room' });
+      const span = trace
+        .getTracer('realtime-gateway')
+        .startSpan('ws chat:send', { kind: SpanKind.SERVER });
+      void otelContext
+        .with(trace.setSpan(otelContext.active(), span), async () => {
+          const parsed = chatSendPayloadSchema.safeParse(payload);
+          if (!parsed.success) return ack?.({ ok: false, error: 'invalid_payload' });
+          if (!data.roomId) return ack?.({ ok: false, error: 'not_in_a_room' });
 
-        const allowed = await chatBucket
-          .consume(`chat:${data.user.id}`, CHAT_BUCKET)
-          .catch(() => true); // Redis down → fail-open, same call as the gateway
-        if (!allowed) return ack?.({ ok: false, error: 'rate_limited' });
+          const allowed = await chatBucket
+            .consume(`chat:${data.user.id}`, CHAT_BUCKET)
+            .catch(() => true); // Redis down → fail-open, same call as the gateway
+          if (!allowed) return ack?.({ ok: false, error: 'rate_limited' });
 
-        const now = new Date();
-        const message = {
-          tempId: parsed.data.tempId,
-          roomId: data.roomId,
-          userId: data.user.id,
-          nickname: data.user.nickname,
-          content: parsed.data.content,
-          sentAt: now.toISOString(),
-        };
-        rooms.to(roomKey(data.roomId)).emit(CHAT_SOCKET_EVENTS.chatNew, message);
-        bus.publish(makeDomainEvent('chat.message.submitted', message, now));
-        ack?.({ ok: true });
-      })();
+          const now = new Date();
+          const message = {
+            tempId: parsed.data.tempId,
+            roomId: data.roomId,
+            userId: data.user.id,
+            nickname: data.user.nickname,
+            content: parsed.data.content,
+            sentAt: now.toISOString(),
+          };
+          rooms.to(roomKey(data.roomId)).emit(CHAT_SOCKET_EVENTS.chatNew, message);
+          bus.publish(makeDomainEvent('chat.message.submitted', message, now));
+          chatMessages.add(1);
+          ack?.({ ok: true });
+        })
+        .finally(() => span.end());
     });
 
     // skip voting (§6.4): RTG relays; playback owns the rules

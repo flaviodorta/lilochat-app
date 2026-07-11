@@ -10,14 +10,17 @@ const IGNORE_UNDER_S = 1; // imperceptible
 const HARD_SEEK_OVER_S = 3; // rebuffer/lag — jump
 const NUDGE_UP = 1.05; // soft catch-up, invisible to the user
 const NUDGE_DOWN = 0.95;
+const SAMPLE_EVERY_TICKS = 60; // drift telemetry ~1/min (§4.1 sync-drift SLI)
 
 export function useDriftCorrection(
   playerRef: RefObject<PlayerHandle | null>,
   playback: PlaybackState | null,
   serverNowMs: () => number,
+  onSample?: (driftMs: number) => void,
 ) {
   useEffect(() => {
     if (!playback) return;
+    let tick = 0;
 
     const timer = setInterval(() => {
       const player = playerRef.current;
@@ -27,6 +30,9 @@ export function useDriftCorrection(
 
       const expected = positionSeconds(serverNowMs(), playback.startedAt, playback.durationS);
       const drift = actual - expected; // + ahead of the room, − behind
+
+      tick += 1;
+      if (tick % SAMPLE_EVERY_TICKS === 0) onSample?.(Math.round(drift * 1000));
 
       if (Math.abs(drift) > HARD_SEEK_OVER_S) {
         player.seekTo(expected);
@@ -39,5 +45,5 @@ export function useDriftCorrection(
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [playerRef, playback, serverNowMs]);
+  }, [playerRef, playback, serverNowMs, onSample]);
 }

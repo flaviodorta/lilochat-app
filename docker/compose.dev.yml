@@ -32,6 +32,9 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: lilochat
       RABBITMQ_DEFAULT_PASS: lilochat # dev-only
+    volumes:
+      # + rabbitmq_prometheus: per-queue metrics on :15692 (DLQ-depth alert)
+      - ./rabbitmq-enabled-plugins:/etc/rabbitmq/enabled_plugins:ro
     ports:
       - '5672:5672' # AMQP
       - '15672:15672' # management UI
@@ -84,8 +87,9 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin # dev-only
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
-      - '3001:3000' # 3000 is taken by Next.js dev
+      - '3003:3000' # 3000/3001/3002 are Next.js dev + its port fallbacks
 
 volumes:
   pgdata:

@@ -15,6 +15,10 @@ processors:
 exporters:
   prometheus:
     endpoint: 0.0.0.0:9464
+    # flatten resource attrs into labels: service.name → service_name
+    # (otherwise every service's metrics collapse under job=otel-collector)
+    resource_to_telemetry_conversion:
+      enabled: true
   otlp/tempo:
     endpoint: tempo:4317
     tls:
