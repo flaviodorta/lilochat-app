@@ -11,7 +11,7 @@ import type { Redis } from 'ioredis';
 import { LOGGER, type Logger } from '@lilochat/nest-shared';
 import { GATEWAY_CONFIG, type GatewayConfig } from '../config.js';
 import { REDIS } from '../redis/redis.module.js';
-import { TokenBucket, type BucketPolicy } from './token-bucket.js';
+import { TokenBucket, type BucketPolicy } from '@lilochat/nest-shared';
 
 /**
  * Global admission control. Key: hash of the bearer token when present (cheap,

@@ -14,6 +14,7 @@ export { RedisIdempotencyStore, type IdempotencyStore } from './messaging/idempo
 export { bindConsumer, type ConsumerOptions } from './messaging/consumer.js';
 export { EVENT_BUS, MessagingModule } from './messaging/messaging.module.js';
 export { CircuitBreaker, CircuitOpenError } from './resilience/circuit-breaker.js';
+export { TokenBucket, type BucketPolicy } from './resilience/token-bucket.js';
 export {
   OutboxRelay,
   outboxRowFrom,

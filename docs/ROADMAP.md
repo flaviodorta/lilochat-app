@@ -194,12 +194,18 @@ verified manually (headless Chromium lacks the codecs). Deploy half still deferr
       ✅ 3 integration tests: submit→persist→ack (tempId round-trip), exactly-once on
       redelivery (messageId = submitted eventId: the PK is the second idempotency belt),
       pagination 50/50/20 no dupes. Port 4104.
-- [ ] **3.3 RTG: chat relay.** `chat:send`: token bucket (1 msg/s), ≤500 chars, optimistic
+- [x] **3.3 RTG: chat relay.** `chat:send`: token bucket (1 msg/s), ≤500 chars, optimistic
       broadcast (`chat:new` pending + tempId) → publish; consume persisted → `chat:ack`;
       DLQ path → `chat:retract`. DoD: integration test incl. rate-limit rejection.
-- [ ] **3.4 RTG: presence.** TTL keys (75 s) + 30 s heartbeat, `presence.user.joined/left`
+      ✅ 2 integration tests. Deviation: no DLQ-watcher retraction — the client times out
+      unacked pending messages instead (simpler, same UX; revisit if it ever matters).
+      TokenBucket promoted to nest-shared (3rd consumer).
+- [x] **3.4 RTG: presence.** TTL keys (75 s) + 30 s heartbeat, `presence.user.joined/left`
       (sessionId, TTL-sweep for ghosts), `presence:state` on join, joined/left broadcasts.
       DoD: kill a socket ungracefully → `left` fires ≤ 75 s.
+      ✅ 2 integration tests: full join/leave flow + a PLANTED expired session reaped by the
+      sweeper (the true ghost-killer path). Design: ZSET score = expiry (not key TTL — the
+      sweep needs to know WHO expired to publish left); heartbeat piggybacks on sync:ping.
 - [ ] **3.5 Rooms: viewer counts + lobby.** Consume presence → `room_cards.viewers`; RTG `/lobby`
       namespace broadcasting `room:summary` throttled 1/10 s/room. DoD: two tabs — home count
       updates live.

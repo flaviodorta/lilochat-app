@@ -10,6 +10,9 @@ export const rtgEnvSchema = z.object({
   /** Load shedding (CLAUDE.md §9.1): shed BEFORE saturation, with a clear error. */
   MAX_CONNECTIONS: z.coerce.number().int().positive().default(5000),
   MAX_ROOM_JOINS: z.coerce.number().int().positive().default(200),
+  /** Presence session TTL — a closed laptop 'leaves' within this window (§6.5). */
+  PRESENCE_TTL_MS: z.coerce.number().int().positive().default(75_000),
+  PRESENCE_SWEEP_MS: z.coerce.number().int().positive().default(15_000),
   /** Overridable so integration tests get isolated queues. */
   RTG_CONSUMER_QUEUE: z.string().default('rtg.playback-events'),
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
