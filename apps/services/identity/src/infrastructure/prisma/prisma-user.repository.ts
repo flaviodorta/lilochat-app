@@ -1,4 +1,4 @@
-import { Prisma, type User as UserRow } from '@prisma/client';
+import { Prisma, type User as UserRow } from '../../../generated/client/index.js';
 import { EmailAlreadyInUseError, NicknameAlreadyInUseError } from '../../domain/errors.js';
 import type { UserRepository } from '../../domain/ports.js';
 import { User } from '../../domain/user.js';

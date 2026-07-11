@@ -32,3 +32,6 @@ test-results/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# prisma generated clients (per-service output)
+apps/services/*/generated/

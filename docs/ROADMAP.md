@@ -116,10 +116,13 @@ Messaging backbone (first real use → build it now):
 
 Services:
 
-- [ ] **2.4 Rooms service.** `rooms` + `room_cards` tables; `CreateRoom` (name 3–50 chars),
+- [x] **2.4 Rooms service.** `rooms` + `room_cards` tables; `CreateRoom` (name 3–50 chars),
       keyset-paginated `ListRooms` (+ `q` search via trigram index), consume
       `playback.video.started` → update card. Publishes `room.created` (outbox).
-      DoD: pagination/search integration tests.
+      DoD: pagination/search integration tests. ✅ 5 integration tests: outbox→bus publish,
+      keyset pages 10/10/5 without dupes, trigram ILIKE search, consumer→card update.
+      Note: room+card+outbox created in ONE transaction (card born with the room);
+      RabbitMQ 4 gotcha documented (transient non-exclusive queues are forbidden).
 - [ ] **2.5 Playback service — metadata.** YouTube Data API client (server-side key), URL→videoId
       parser (all YT URL shapes), `videos` cache table (cache-aside, permanent), circuit breaker,
       **reject videos > 4 h or non-embeddable**. DoD: unit tests incl. breaker-open degrade.

@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+  // per-service output: pnpm shares ONE @prisma/client instance across the whole
+  // workspace, so default-location generates clobber each other (identity vs rooms)
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("ROOMS_DATABASE_URL")
+}
+
+model Room {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String
+  ownerId   String     @map("owner_id") @db.Uuid
+  status    RoomStatus @default(ACTIVE)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@map("rooms")
+}
+
+enum RoomStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+/// CQRS read model (ADR-006): the home directory is ONE indexed query.
+/// Born with the room (same transaction); video fields arrive via
+/// playback.video.started events; viewers via presence events (Phase 3).
+/// A trigram GIN index on `name` (raw SQL in the init migration) powers search.
+model RoomCard {
+  roomId        String    @id @map("room_id") @db.Uuid
+  name          String
+  viewers       Int       @default(0)
+  videoId       String?   @map("video_id")
+  videoTitle    String?   @map("video_title")
+  videoThumbUrl String?   @map("video_thumb_url")
+  videoDurationS Int?     @map("video_duration_s")
+  videoStartedAt DateTime? @map("video_started_at")
+  createdAt     DateTime  @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([createdAt(sort: Desc), roomId(sort: Desc)])
+  @@map("room_cards")
+}
+
+/// Transactional outbox (ADR-005) — convention shared across services.
+model OutboxEvent {
+  id          String    @id @db.Uuid
+  name        String
+  payload     Json
+  occurredAt  DateTime  @map("occurred_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt, id])
+  @@map("outbox_events")
+}

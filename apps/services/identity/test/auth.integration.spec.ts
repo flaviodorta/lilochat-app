@@ -22,7 +22,7 @@ const CREDS = { email: 'it@lilochat.app', password: 'supersecret', nickname: 'it
 
 beforeAll(async () => {
   // 1. ensure the dedicated test database exists (idempotent)
-  const { PrismaClient } = await import('@prisma/client');
+  const { PrismaClient } = await import('../generated/client/index.js');
   const admin = new PrismaClient({ datasources: { db: { url: ADMIN_DB_URL } } });
   await admin.$executeRawUnsafe('CREATE DATABASE lilochat_identity_test').catch(() => undefined);
   await admin.$disconnect();

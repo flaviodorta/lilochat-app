@@ -1,5 +1,8 @@
 generator client {
   provider = "prisma-client-js"
+  // per-service output: pnpm shares ONE @prisma/client instance across the whole
+  // workspace, so default-location generates clobber each other (identity vs rooms)
+  output   = "../generated/client"
 }
 
 datasource db {
