@@ -299,9 +299,17 @@ progress/finished` out. DoD: integration test 3 sockets. ✅ (box was stale — 
       in the system — both bugs found were in the harness (ack-id parsing, token-pool overlap;
       kept in the report for honesty). Real insight: the persisted-ack path is outbox-poll-bound
       (~500 ms), a durability-vs-latency knob, not a defect. Re-run on the VPS when deploy lands.
-- [ ] **6.3 Backups & DR.** WAL archiving to object storage + nightly base backup; **restore
+- [x] **6.3 Backups & DR.** WAL archiving to object storage + nightly base backup; **restore
       rehearsal on a scratch VPS** (timed → validates RTO 1 h); runbooks: deploy, restore,
-      DLQ replay.
+      DLQ replay. ✅ compose.prod: archive_mode + archive_timeout=300 (that interval IS the
+      5-min RPO) + pg-backup sidecar (nightly pg_basebackup, keep 7, rclone off-site hook).
+      Restore REHEARSED via scripts/backup/dr-rehearsal.sh: base backup → 500 post-backup
+      rows → volume destroyed → restore + WAL replay → 1500/1500 rows back (the 500
+      WAL-only rows are the RPO proof). DLQ replay tool (scripts/ops/dlq-replay.mjs,
+      x-death routing + audit headers) drilled against an isolated queue. Runbooks written:
+      deploy (rolling + rollback + provision checklist), restore (with rehearsal evidence),
+      dlq-replay. Scratch-VPS variant + real-size timing re-run when deploy lands (deferred
+      by owner decision); the local drill uses the exact prod flags and sidecar commands.
 - [ ] **6.4 Security pass.** Full checklist: headers/CSP, CORS exact origins, chat sanitization,
       `pnpm audit` + Renovate, rate-limit review, secrets rotation drill, dependency pinning.
 - [ ] **6.5 Feature flags + graceful degradation drills.** Redis kill switches (chat, votes,

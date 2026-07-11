@@ -32,11 +32,19 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    # WAL archiving (§4.2): archive_timeout forces a segment every 5 min even
+    # when traffic is low — that interval IS the 5-minute RPO.
+    command: >
+      postgres -c wal_level=replica
+               -c archive_mode=on
+               -c archive_timeout=300
+               -c archive_command='test ! -f /wal-archive/%f && cp %p /wal-archive/%f'
     environment:
       POSTGRES_USER: lilochat
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - walarchive:/wal-archive
       - ./postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U lilochat']
@@ -44,6 +52,25 @@ services:
       timeout: 5s
       retries: 10
     # no host ports: reachable only on the compose network
+
+  # Nightly base backup + retention + optional rclone off-site (§4.2).
+  # Restore drill: scripts/backup/dr-rehearsal.sh · runbook: docs/runbooks/restore.md
+  pg-backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ['/bin/sh', '/pg-nightly-backup.sh']
+    environment:
+      PGHOST: postgres
+      PGUSER: lilochat
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      RETAIN: 7
+      # RCLONE_REMOTE: b2:lilochat-backups   # ← set + mount rclone.conf for off-site
+    volumes:
+      - ../scripts/backup/pg-nightly-backup.sh:/pg-nightly-backup.sh:ro
+      - pgbackups:/backups
 
   redis:
     image: redis:7-alpine
@@ -118,4 +145,6 @@ services:
 
 volumes:
   pgdata:
+  walarchive:
+  pgbackups:
   letsencrypt:
