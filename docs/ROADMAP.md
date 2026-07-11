@@ -108,8 +108,11 @@ Messaging backbone (first real use → build it now):
       failure), retry (3× expo backoff + full jitter), DLQ per queue. DoD: integration tests.
       ✅ 4 integration tests vs real RabbitMQ+Redis (repo pattern: compose infra, not
       Testcontainers — same guarantee, one less moving part; revisit for CI in 0.6).
-- [ ] **2.3 nest-shared: transactional outbox.** Outbox table convention + Prisma middleware
-      helper + polling relay (batch 100, marks published). DoD: kill-the-relay test proves no loss.
+- [x] **2.3 nest-shared: transactional outbox.** Outbox table convention (Prisma model in the
+      relay's docblock) + `outboxRowFrom` helper + generic `OutboxRelay` (poll 500ms, batch 100,
+      overlap-guarded; services adapt their PrismaClient in ~5 lines).
+      DoD: kill-the-relay test proves no loss. ✅ crash between publish and mark ⇒ 100 duplicates,
+      0 losses, all rows eventually marked — consumer idempotency collapses the dupes.
 
 Services:
 

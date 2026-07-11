@@ -13,3 +13,10 @@ export { LILOCHAT_DLX, LILOCHAT_EXCHANGE, RabbitMqBus } from './messaging/rabbit
 export { RedisIdempotencyStore, type IdempotencyStore } from './messaging/idempotency.js';
 export { bindConsumer, type ConsumerOptions } from './messaging/consumer.js';
 export { EVENT_BUS, MessagingModule } from './messaging/messaging.module.js';
+export {
+  OutboxRelay,
+  outboxRowFrom,
+  type OutboxClient,
+  type OutboxRelayOptions,
+  type OutboxRow,
+} from './messaging/outbox.js';
