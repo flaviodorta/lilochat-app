@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import {
@@ -69,28 +69,32 @@ export function AuthModal() {
     <Dialog open={authModal.open} onOpenChange={(open) => !open && closeAuthModal()}>
       <DialogContent className="overflow-hidden">
         <AnimatedHeight>
-          <AnimatePresence mode="wait" custom={direction} initial={false}>
+          {/* popLayout pops the exiting panel to absolute — the container height
+              tracks ONLY the entering panel, so AnimatedHeight glides once. */}
+          <AnimatePresence mode="popLayout" custom={direction} initial={false}>
             {authModal.mode === 'signin' ? (
               <motion.div
                 key="signin"
+                className="w-full"
                 custom={direction}
                 variants={slide}
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={{ duration: 0.18, ease: 'easeOut' }}
+                transition={{ duration: 0.22, ease: 'easeOut' }}
               >
                 <SignInPanel onSwitch={() => setAuthModalMode('signup')} />
               </motion.div>
             ) : (
               <motion.div
                 key="signup"
+                className="w-full"
                 custom={direction}
                 variants={slide}
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={{ duration: 0.18, ease: 'easeOut' }}
+                transition={{ duration: 0.22, ease: 'easeOut' }}
               >
                 <SignUpPanel onSwitch={() => setAuthModalMode('signin')} />
               </motion.div>

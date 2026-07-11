@@ -17,7 +17,9 @@ async function bootstrap(): Promise<void> {
   const config = app.get<GatewayConfig>(GATEWAY_CONFIG);
   const logger = app.get<Logger>(LOGGER);
 
-  app.use(helmet());
+  // CORP relaxed: this API serves cross-origin resources (avatars) to the web
+  // app — helmet's same-origin default makes browsers refuse the <img> embeds.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(cookieParser());
   app.enableCors({
     origin: config.CORS_ORIGINS.split(',').map((origin) => origin.trim()),

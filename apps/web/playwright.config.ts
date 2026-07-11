@@ -7,7 +7,7 @@ import { defineConfig, devices } from '@playwright/test';
  * offset-corrected position ticker, the same math the player syncs against.
  */
 const IDENTITY_PORT = 4111;
-const GATEWAY_PORT = 4110;
+const GATEWAY_PORT = 4120; // 4110 is the dev RTG — E2E must not collide
 const ROOMS_PORT = 4112;
 const PLAYBACK_PORT = 4113;
 const RTG_PORT = 4115;

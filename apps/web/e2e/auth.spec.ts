@@ -29,8 +29,13 @@ test('sign up via the modal, resume session on reload, sign out, sign back in', 
   await expect(page.getByText('Join LiloChat')).toBeVisible();
 
   await page.getByLabel('Nickname').fill(NICKNAME);
-  // live avatar preview follows the (debounced) nickname
-  await expect(page.locator(`img[src*="${NICKNAME}"]`)).toBeVisible();
+  // live avatar preview follows the (debounced) nickname — and must ACTUALLY
+  // render (regression guard: helmet's CORP once made browsers refuse it)
+  const avatar = page.locator(`img[src*="${NICKNAME}"]`);
+  await expect(avatar).toBeVisible();
+  await expect
+    .poll(async () => avatar.evaluate((el: HTMLImageElement) => el.naturalWidth))
+    .toBeGreaterThan(0);
 
   await page.getByLabel('Email').fill(EMAIL);
   await page.getByLabel('Password').fill(PASSWORD);

@@ -10,7 +10,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
  * headless Chromium lacks the proprietary codecs YouTube needs.
  */
 
-const GATEWAY = 'http://localhost:4110';
+const GATEWAY = 'http://localhost:4120';
 const RUN = Date.now().toString(36);
 
 async function signUpViaApi(context: BrowserContext, nick: string): Promise<string> {
