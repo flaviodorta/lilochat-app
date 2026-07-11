@@ -5,8 +5,11 @@ import { HealthModule, LoggerModule, TypedConfigModule } from '@lilochat/nest-sh
 import { AvatarService } from './avatars/avatar.service.js';
 import { AvatarsController } from './avatars/avatars.controller.js';
 import { IdentityClient } from './clients/identity.client.js';
+import { PlaybackClient } from './clients/playback.client.js';
+import { RoomsClient } from './clients/rooms.client.js';
 import { GATEWAY_CONFIG, gatewayEnvSchema } from './config.js';
 import { AuthController } from './http/auth.controller.js';
+import { RoomsController } from './http/rooms.controller.js';
 import { UsersController } from './http/users.controller.js';
 import { RedisModule, REDIS } from './redis/redis.module.js';
 import { JwtAuthGuard } from './security/jwt-auth.guard.js';
@@ -32,9 +35,11 @@ import { RateLimitGuard } from './security/rate-limit.guard.js';
       },
     }),
   ],
-  controllers: [AuthController, UsersController, AvatarsController],
+  controllers: [AuthController, UsersController, AvatarsController, RoomsController],
   providers: [
     IdentityClient,
+    RoomsClient,
+    PlaybackClient,
     AvatarService,
     JwtAuthGuard,
     { provide: APP_GUARD, useClass: RateLimitGuard }, // admission control runs first, on every route

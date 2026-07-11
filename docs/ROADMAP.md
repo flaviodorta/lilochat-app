@@ -132,15 +132,17 @@ Services:
       Redis tuple `room:{id}:playback`; BullMQ **auto-advance scheduler** (delayed job at
       `startedAt+duration+grace`, jobId = roomId for per-room serialization; reschedule on skip);
       consume `room.created` → start first video when added. Publishes `playback.video.added/
-  started/skipped`, `playback.queue.updated` (outbox). DoD: integration test — add 2 short
+started/skipped`, `playback.queue.updated` (outbox). DoD: integration test — add 2 short
       videos, watch auto-advance fire; **timeline math unit-tested exhaustively**.
       ✅ 6 integration tests: idle-room autostart, THE auto-advance (video2 starts by itself),
       queue-drained→idle, remove permissions. Design notes: no room.created consumer needed
       (AddVideo starts idle rooms); BullMQ jobId = itemId, NOT roomId — rescheduling from
       inside the active job dedupes silently (and ':' is forbidden in custom ids).
-- [ ] **2.7 Gateway routes.** `GET /rooms` (cards), `POST /rooms`, `GET /rooms/:id` (composed:
+- [x] **2.7 Gateway routes.** `GET /rooms` (cards), `POST /rooms`, `GET /rooms/:id` (composed:
       card + queue + tuple), `POST /rooms/:id/queue`, `DELETE /rooms/:id/queue/:itemId`.
-      DoD: E2E via supertest.
+      DoD: E2E via supertest. ✅ 5 composition tests (stubbed services): create composes
+      rooms→playback with JWT identity; detail merges card+state; DELETE resolves ownership
+      server-side; reads public, mutations authed. First-video failure → room starts idle (logged).
 
 Realtime:
 

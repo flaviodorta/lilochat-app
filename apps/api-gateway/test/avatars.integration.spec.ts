@@ -46,6 +46,8 @@ beforeAll(async () => {
   });
 
   process.env.IDENTITY_SERVICE_URL = 'http://127.0.0.1:9'; // unused here
+  process.env.ROOMS_SERVICE_URL = 'http://127.0.0.1:9';
+  process.env.PLAYBACK_SERVICE_URL = 'http://127.0.0.1:9';
   process.env.REDIS_URL = 'redis://localhost:6380/2'; // db 2: isolated avatar cache
   process.env.JWT_PUBLIC_KEY = Buffer.from(publicKey).toString('base64');
   process.env.NODE_ENV = 'test';
