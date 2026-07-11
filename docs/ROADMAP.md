@@ -146,10 +146,14 @@ started/skipped`, `playback.queue.updated` (outbox). DoD: integration test — a
 
 Realtime:
 
-- [ ] **2.8 Realtime gateway.** Socket.io + Redis adapter, `/room` namespace, JWT handshake,
+- [x] **2.8 Realtime gateway.** Socket.io + Redis adapter, `/room` namespace, JWT handshake,
       `room:join` (membership check), consume `playback.*` → broadcast to room,
       `sync:ping`→`sync:pong` (serverNow). Load-shedding caps (5k/instance, 200/room).
       DoD: socket.io-client integration test receives `playback:started` after REST queue add.
+      ✅ 4 integration tests: unauthorized handshakes rejected, clock sync, bus event →
+      room-scoped broadcast (no cross-room leak asserted), room_full shedding. Note:
+      competing consumers across instances is CORRECT — the Redis adapter fans out.
+      Room occupancy via fetchSockets() (adapter-wide). Port 4110.
 
 Frontend (the payoff):
 
