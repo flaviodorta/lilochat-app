@@ -5,8 +5,10 @@ export const playbackEnvSchema = z.object({
   PLAYBACK_DATABASE_URL: z.string().url(),
   RABBITMQ_URL: z.string().min(1),
   REDIS_URL: z.string().min(1),
-  /** Server-side only — never NEXT_PUBLIC_ (legacy lesson). */
-  YOUTUBE_API_KEY: z.string().min(1),
+  /** Server-side only — never NEXT_PUBLIC_ (legacy lesson). Optional at boot:
+   *  without it the service runs and add-video degrades to a clear 503
+   *  (VIDEO_METADATA_UNAVAILABLE) — dev keeps working, prod sets it. */
+  YOUTUBE_API_KEY: z.string().default(''),
   YOUTUBE_API_URL: z.string().url().default('https://www.googleapis.com/youtube/v3'),
   /** Buffering-tail grace before auto-advance (§6.2). */
   ADVANCE_GRACE_MS: z.coerce.number().int().nonnegative().default(1500),

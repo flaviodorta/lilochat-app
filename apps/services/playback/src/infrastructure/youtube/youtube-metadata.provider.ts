@@ -20,6 +20,9 @@ export class YoutubeMetadataProvider implements VideoMetadataProvider {
 
   fetch(videoId: string): Promise<VideoMetadata | null> {
     return this.breaker.execute(async () => {
+      if (!this.options.apiKey) {
+        throw new Error('YOUTUBE_API_KEY is not configured');
+      }
       const url =
         `${this.options.apiUrl}/videos?part=snippet,contentDetails,status` +
         `&id=${encodeURIComponent(videoId)}&key=${this.options.apiKey}`;
