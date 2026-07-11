@@ -114,10 +114,18 @@ function PlayerZone({
               videoId={playback.videoId}
               startSeconds={positionSeconds(serverNowMs(), playback.startedAt, playback.durationS)}
               onBuffered={() => {
-                // §6.2: after buffering, hard-resync instead of drifting back slowly
-                playerRef.current?.seekTo(
-                  positionSeconds(serverNowMs(), playback.startedAt, playback.durationS),
+                // §6.2: after REAL rebuffering, hard-resync. Conditional on actual
+                // drift: every seek buffers briefly, so an unconditional seek here
+                // becomes an infinite seek→buffer→seek loop (permanent spinner).
+                const expected = positionSeconds(
+                  serverNowMs(),
+                  playback.startedAt,
+                  playback.durationS,
                 );
+                const actual = playerRef.current?.getCurrentTime();
+                if (actual !== null && actual !== undefined && Math.abs(actual - expected) > 3) {
+                  playerRef.current?.seekTo(expected);
+                }
               }}
             />
             {muted && (
