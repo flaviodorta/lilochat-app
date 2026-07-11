@@ -98,7 +98,7 @@ Frontend:
 
 Contracts first:
 
-- [ ] **2.1 Contracts.** Room/playback DTOs; domain events (`room.*`, `playback.*`); socket events
+- [x] **2.1 Contracts.** Room/playback DTOs; domain events (`room.*`, `playback.*`); socket events
       (`/room` namespace, `sync:ping/pong`). DoD: reviewed against CLAUDE.md §6.1/§7.2.
 
 Messaging backbone (first real use → build it now):

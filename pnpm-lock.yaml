@@ -252,6 +252,9 @@ importers:
       '@lilochat/tooling':
         specifier: workspace:*
         version: link:../tooling
+      '@types/node':
+        specifier: ^20.19.43
+        version: 20.19.43
       eslint:
         specifier: ^9.17.0
         version: 9.39.5(jiti@2.7.0)
