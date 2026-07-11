@@ -86,8 +86,9 @@ Frontend:
       ✅ done locally: Playwright E2E (2 tests, full journey incl. cookie flags + session resume);
       Dockerfiles (turbo prune) for identity/gateway/web; Next standalone; compose.prod with
       Traefik + Let's Encrypt; all 3 images built and smoke-tested (register works containerized).
-      ⏳ pending owner resources: GitHub repo (gh CLI not installed — create manually or install gh),
-      VPS + domain; then: push, CI green (0.6), deploy workflow, DNS, public URL check.
+      ⏳ owner decisions (2026-07-10): GitHub repo will be created manually by the owner (URL
+      pending → then: remote, push, CI green closes 0.6). VPS/domain deliberately deferred —
+      **Phase 2 first**, deploy when the sync core is demoable. Public-URL DoD moves with it.
 
 **Phase DoD:** a stranger can sign up on the internet and see their avatar. CI deploys on merge.
 
