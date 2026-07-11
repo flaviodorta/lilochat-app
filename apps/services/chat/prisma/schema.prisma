@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+  // per-service output (see rooms/identity): pnpm shares one @prisma/client
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("CHAT_DATABASE_URL")
+}
+
+/// Append-only. `id` = the submitted event's eventId (idempotent persistence
+/// by primary key). `nickname` denormalized at write time (§8) — renames update
+/// nothing here; history keeps the historical name (accepted product behavior).
+model Message {
+  id        String   @id @db.Uuid
+  roomId    String   @map("room_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  nickname  String
+  content   String
+  createdAt DateTime @map("created_at")
+
+  @@index([roomId, createdAt(sort: Desc), id(sort: Desc)])
+  @@map("messages")
+}
+
+model OutboxEvent {
+  id          String    @id @db.Uuid
+  name        String
+  payload     Json
+  occurredAt  DateTime  @map("occurred_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt, id])
+  @@map("outbox_events")
+}

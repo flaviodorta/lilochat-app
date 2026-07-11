@@ -185,10 +185,15 @@ verified manually (headless Chromium lacks the codecs). Deploy half still deferr
 
 ## Phase 3 — Chat + Presence
 
-- [ ] **3.1 Contracts.** `chat.*`, `presence.*` domain events; `chat:*`, `presence:*` socket events.
-- [ ] **3.2 Chat service.** `messages` table (idx `room_id, created_at desc`); consume
+- [x] **3.1 Contracts.** `chat.*`, `presence.*` domain events; `chat:*`, `presence:*` socket events.
+      ✅ + tempId threaded through submitted→persisted so acks reconcile optimistic messages;
+      nickname denormalized at the source (§8).
+- [x] **3.2 Chat service.** `messages` table (idx `room_id, created_at desc`); consume
       `chat.message.submitted` → persist → publish `chat.message.persisted` (outbox);
       `GET /rooms/:id/messages?cursor=` keyset. DoD: pipeline integration test.
+      ✅ 3 integration tests: submit→persist→ack (tempId round-trip), exactly-once on
+      redelivery (messageId = submitted eventId: the PK is the second idempotency belt),
+      pagination 50/50/20 no dupes. Port 4104.
 - [ ] **3.3 RTG: chat relay.** `chat:send`: token bucket (1 msg/s), ≤500 chars, optimistic
       broadcast (`chat:new` pending + tempId) → publish; consume persisted → `chat:ack`;
       DLQ path → `chat:retract`. DoD: integration test incl. rate-limit rejection.
