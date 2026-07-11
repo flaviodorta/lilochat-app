@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+  // per-service output (see rooms/identity): pnpm shares one @prisma/client
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("PLAYBACK_DATABASE_URL")
+}
+
+/// YouTube metadata cache — permanent (metadata is immutable; CLAUDE.md §4.3).
+model Video {
+  videoId    String   @id @map("video_id")
+  title      String
+  durationS  Int      @map("duration_s")
+  thumbUrl   String   @map("thumb_url")
+  embeddable Boolean
+  fetchedAt  DateTime @map("fetched_at")
+
+  @@map("videos")
+}
+
+model QueueItem {
+  id              String          @id @db.Uuid
+  roomId          String          @map("room_id") @db.Uuid
+  videoId         String          @map("video_id")
+  title           String
+  durationS       Int             @map("duration_s")
+  thumbUrl        String          @map("thumb_url")
+  addedById       String          @map("added_by_id") @db.Uuid
+  addedByNickname String          @map("added_by_nickname")
+  position        Int
+  status          QueueItemStatus @default(PENDING)
+  createdAt       DateTime        @map("created_at")
+  startedAt       DateTime?       @map("started_at")
+  endedAt         DateTime?       @map("ended_at")
+
+  @@index([roomId, status, position])
+  @@map("queue_items")
+}
+
+enum QueueItemStatus {
+  PENDING
+  PLAYING
+  DONE
+  SKIPPED
+}
+
+model OutboxEvent {
+  id          String    @id @db.Uuid
+  name        String
+  payload     Json
+  occurredAt  DateTime  @map("occurred_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt, id])
+  @@map("outbox_events")
+}

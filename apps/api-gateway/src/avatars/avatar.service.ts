@@ -1,10 +1,9 @@
 import multiavatar from '@multiavatar/multiavatar';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Redis } from 'ioredis';
-import { LOGGER, type Logger } from '@lilochat/nest-shared';
+import { CircuitBreaker, LOGGER, type Logger } from '@lilochat/nest-shared';
 import { GATEWAY_CONFIG, type GatewayConfig } from '../config.js';
 import { REDIS } from '../redis/redis.module.js';
-import { CircuitBreaker } from '../resilience/circuit-breaker.js';
 
 /**
  * Avatar pipeline (ADR-008): Redis cache-aside → Multiavatar HTTP API behind a

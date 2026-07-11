@@ -1,12 +1,13 @@
 import { BadRequestException, type PipeTransform } from '@nestjs/common';
-import type { ZodType } from 'zod';
+import type { ZodType, ZodTypeDef } from 'zod';
 
 /**
  * Per-route zod validation: `@Body(new ZodValidationPipe(registerBodySchema))`.
  * Contracts live in @lilochat/contracts — the edge validates, handlers receive typed data.
+ * Input type is `unknown` so schemas with transforms/coercions (input ≠ output) fit.
  */
 export class ZodValidationPipe<T> implements PipeTransform<unknown, T> {
-  constructor(private readonly schema: ZodType<T>) {}
+  constructor(private readonly schema: ZodType<T, ZodTypeDef, unknown>) {}
 
   transform(value: unknown): T {
     const result = this.schema.safeParse(value);

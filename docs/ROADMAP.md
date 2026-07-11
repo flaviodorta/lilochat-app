@@ -123,15 +123,21 @@ Services:
       keyset pages 10/10/5 without dupes, trigram ILIKE search, consumer→card update.
       Note: room+card+outbox created in ONE transaction (card born with the room);
       RabbitMQ 4 gotcha documented (transient non-exclusive queues are forbidden).
-- [ ] **2.5 Playback service — metadata.** YouTube Data API client (server-side key), URL→videoId
+- [x] **2.5 Playback service — metadata.** YouTube Data API client (server-side key), URL→videoId
       parser (all YT URL shapes), `videos` cache table (cache-aside, permanent), circuit breaker,
       **reject videos > 4 h or non-embeddable**. DoD: unit tests incl. breaker-open degrade.
-- [ ] **2.6 Playback service — timeline.** Queue CRUD (`AddVideo` w/ dup check, positions);
+      ✅ 37 unit tests (timeline math, URL/ISO-duration parsers); breaker moved to nest-shared;
+      integration proves cache-aside (1 API call per videoId) + 404/422 validations.
+- [x] **2.6 Playback service — timeline.** Queue CRUD (`AddVideo` w/ dup check, positions);
       Redis tuple `room:{id}:playback`; BullMQ **auto-advance scheduler** (delayed job at
       `startedAt+duration+grace`, jobId = roomId for per-room serialization; reschedule on skip);
       consume `room.created` → start first video when added. Publishes `playback.video.added/
-started/skipped`, `playback.queue.updated` (outbox). DoD: integration test — add 2 short
+  started/skipped`, `playback.queue.updated` (outbox). DoD: integration test — add 2 short
       videos, watch auto-advance fire; **timeline math unit-tested exhaustively**.
+      ✅ 6 integration tests: idle-room autostart, THE auto-advance (video2 starts by itself),
+      queue-drained→idle, remove permissions. Design notes: no room.created consumer needed
+      (AddVideo starts idle rooms); BullMQ jobId = itemId, NOT roomId — rescheduling from
+      inside the active job dedupes silently (and ':' is forbidden in custom ids).
 - [ ] **2.7 Gateway routes.** `GET /rooms` (cards), `POST /rooms`, `GET /rooms/:id` (composed:
       card + queue + tuple), `POST /rooms/:id/queue`, `DELETE /rooms/:id/queue/:itemId`.
       DoD: E2E via supertest.
