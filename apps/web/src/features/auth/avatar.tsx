@@ -14,11 +14,13 @@ export function Avatar({
   className?: string;
 }) {
   return (
-    // plain <img>: SVG served by our own gateway, Next image optimization adds nothing
+    // plain <img>: SVG served by our own gateway, Next image optimization adds nothing.
+    // alt="" — decorative; broken-image alt text overflowing the circle looks awful.
     <img
       src={avatarUrl(seed)}
-      alt={`${seed}'s avatar`}
-      className={cn('rounded-full bg-surface-raised', SIZES[size], className)}
+      alt=""
+      aria-hidden
+      className={cn('shrink-0 rounded-full bg-surface-raised object-cover', SIZES[size], className)}
     />
   );
 }

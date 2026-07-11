@@ -18,15 +18,21 @@ interface ApiOptions {
 
 /** Gateway client: JSON in/out, cookies included (the refresh cookie needs them). */
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    method: options.method ?? 'GET',
-    credentials: 'include',
-    headers: {
-      ...(options.body !== undefined ? { 'content-type': 'application/json' } : {}),
-      ...(options.accessToken ? { authorization: `Bearer ${options.accessToken}` } : {}),
-    },
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      method: options.method ?? 'GET',
+      credentials: 'include',
+      headers: {
+        ...(options.body !== undefined ? { 'content-type': 'application/json' } : {}),
+        ...(options.accessToken ? { authorization: `Bearer ${options.accessToken}` } : {}),
+      },
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    });
+  } catch {
+    // fetch itself failed: API down or CORS-blocked origin — say so, loudly
+    throw new ApiError(0, 'NETWORK_UNREACHABLE', `Cannot reach the API at ${API_URL}`);
+  }
 
   if (response.status === 204) return undefined as T;
   const data: unknown = await response.json().catch(() => ({}));

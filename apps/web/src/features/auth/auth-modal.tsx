@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   loginBodySchema,
@@ -22,6 +22,8 @@ const FRIENDLY_ERRORS: Record<string, string> = {
   NICKNAME_ALREADY_IN_USE: 'That nickname is taken. Pick another one!',
   INVALID_CREDENTIALS: 'Wrong email or password.',
   RATE_LIMITED: 'Too many attempts — take a breath and try again in a minute.',
+  NETWORK_UNREACHABLE:
+    'Cannot reach the LiloChat API. Is the backend running (and this origin in its CORS list)?',
 };
 
 function friendlyError(error: unknown): string {
@@ -35,6 +37,30 @@ const slide = {
   exit: (direction: number) => ({ x: direction * -48, opacity: 0 }),
 };
 
+/** Panels differ in height — animate it so the centered dialog glides instead of jumping. */
+function AnimatedHeight({ children }: { children: ReactNode }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | 'auto'>('auto');
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setHeight(el.offsetHeight));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <motion.div
+      animate={{ height }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="overflow-hidden"
+    >
+      <div ref={contentRef}>{children}</div>
+    </motion.div>
+  );
+}
+
 export function AuthModal() {
   const { authModal, closeAuthModal, setAuthModalMode } = useAuth();
   const direction = authModal.mode === 'signup' ? 1 : -1;
@@ -42,33 +68,35 @@ export function AuthModal() {
   return (
     <Dialog open={authModal.open} onOpenChange={(open) => !open && closeAuthModal()}>
       <DialogContent className="overflow-hidden">
-        <AnimatePresence mode="wait" custom={direction} initial={false}>
-          {authModal.mode === 'signin' ? (
-            <motion.div
-              key="signin"
-              custom={direction}
-              variants={slide}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-            >
-              <SignInPanel onSwitch={() => setAuthModalMode('signup')} />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="signup"
-              custom={direction}
-              variants={slide}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-            >
-              <SignUpPanel onSwitch={() => setAuthModalMode('signin')} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <AnimatedHeight>
+          <AnimatePresence mode="wait" custom={direction} initial={false}>
+            {authModal.mode === 'signin' ? (
+              <motion.div
+                key="signin"
+                custom={direction}
+                variants={slide}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+              >
+                <SignInPanel onSwitch={() => setAuthModalMode('signup')} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="signup"
+                custom={direction}
+                variants={slide}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+              >
+                <SignUpPanel onSwitch={() => setAuthModalMode('signin')} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </AnimatedHeight>
       </DialogContent>
     </Dialog>
   );
