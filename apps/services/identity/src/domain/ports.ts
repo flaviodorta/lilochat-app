@@ -1,3 +1,4 @@
+import type { DomainEvent } from '@lilochat/contracts';
 import type { User } from './user.js';
 
 // ── Driven ports (hexagonal): implemented by infrastructure adapters ──────────
@@ -8,8 +9,9 @@ export interface PasswordHasher {
 }
 
 export interface UserRepository {
-  create(user: User): Promise<void>;
-  update(user: User): Promise<void>;
+  /** State change + its domain event in ONE transaction (outbox, ADR-005). */
+  create(user: User, event: DomainEvent<unknown>): Promise<void>;
+  update(user: User, event: DomainEvent<unknown>): Promise<void>;
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findByNickname(nickname: string): Promise<User | null>;

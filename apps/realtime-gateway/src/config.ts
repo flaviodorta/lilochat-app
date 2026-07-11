@@ -14,6 +14,8 @@ export const rtgEnvSchema = z.object({
   /** Presence session TTL — a closed laptop 'leaves' within this window (§6.5). */
   PRESENCE_TTL_MS: z.coerce.number().int().positive().default(75_000),
   PRESENCE_SWEEP_MS: z.coerce.number().int().positive().default(15_000),
+  /** Watch-time checkpoint cadence — bounds crash loss to this window (§4.2 RPO). */
+  CHECKPOINT_MS: z.coerce.number().int().positive().default(60_000),
   /** Lobby fan-out cap: at most one room:summary per room per window (§4.3). */
   LOBBY_THROTTLE_MS: z.coerce.number().int().positive().default(10_000),
   /** Overridable so integration tests get isolated queues. */

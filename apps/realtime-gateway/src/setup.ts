@@ -40,6 +40,7 @@ interface RoomSocketData {
   user: SocketUser;
   roomId?: string;
   session?: PresenceSession;
+  lastCheckpointMs?: number;
 }
 
 /**
@@ -143,6 +144,7 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
         };
         data.roomId = roomId;
         data.session = session;
+        data.lastCheckpointMs = now.getTime();
 
         await socket.join(roomKey(roomId));
         await presence.join(roomId, session, now.getTime());
@@ -245,6 +247,31 @@ export async function setupRealtime(app: INestApplication): Promise<Server> {
       }
     });
   });
+
+  // ── watch-time checkpoints (§6.5): credit every open session each window ──
+  const checkpointer = setInterval(() => {
+    const nowMs = Date.now();
+    const entries: Array<{ sessionId: string; roomId: string; userId: string; seconds: number }> =
+      [];
+    for (const socket of rooms.sockets.values()) {
+      const socketData = socket.data as RoomSocketData;
+      if (!socketData.roomId || !socketData.session) continue;
+      const since = socketData.lastCheckpointMs ?? socketData.session.joinedAtMs;
+      const seconds = Math.floor((nowMs - since) / 1000);
+      if (seconds <= 0) continue;
+      entries.push({
+        sessionId: socketData.session.sessionId,
+        roomId: socketData.roomId,
+        userId: socketData.user.id,
+        seconds,
+      });
+      socketData.lastCheckpointMs = nowMs;
+    }
+    if (entries.length > 0) {
+      bus.publish(makeDomainEvent('presence.checkpoint', { entries }, new Date(nowMs)));
+    }
+  }, config.CHECKPOINT_MS);
+  io.on('close', () => clearInterval(checkpointer));
 
   // ── ghost sweeper (§6.5): sessions that stopped heartbeating leave anyway ──
   const sweeper = setInterval(() => {

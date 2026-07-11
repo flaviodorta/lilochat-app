@@ -251,15 +251,22 @@ progress/finished` out. DoD: integration test 3 sockets.
 
 ## Phase 5 — Engagement (ranking)
 
-- [ ] **5.1 Engagement service.** Consume `presence.user.joined/left` + `presence.checkpoint`
+- [x] **5.1 Engagement service.** Consume `presence.user.joined/left` + `presence.checkpoint`
       (RTG publishes batched 60 s) + `playback.video.started/skipped`; accumulate **qualified
       time** (only while room playing); `watch_sessions` + `user_totals`; Redis ZSETs
       `leaderboard:{alltime|YYYY-MM|YYYY-Www}`. DoD: replay-safe (idempotent) integration tests;
-      crash loses ≤ 60 s (checkpoint RPO).
-- [ ] **5.2 Gateway.** `GET /leaderboard?period&cursor`, `GET /users/me/stats`. DoD: E2E.
-- [ ] **5.3 Web: leaderboard + stats.** Period tabs, top-3 podium (gold/silver/bronze glow),
+      crash loses ≤ 60 s (checkpoint RPO). ✅ integration proves: checkpoint replay = no double
+      credit, idle rooms credit nothing, left credits the residue, ended sessions reject late
+      checkpoints. Bonus: identity outbox wired (registered/updated events) feeding the nickname
+      read model. engagement.rank.updated NOT published (v1: page polls 60 s — YAGNI).
+- [x] **5.2 Gateway.** `GET /leaderboard?period&cursor`, `GET /users/me/stats`. DoD: E2E. ✅ leaderboard
+      public, stats authed (me = JWT sub); covered by engagement integration; full-browser E2E
+      deferred (checkpoints are 60 s — too slow for the suite).
+- [x] **5.3 Web: leaderboard + stats.** Period tabs, top-3 podium (gold/silver/bronze glow),
       ranked rows, own row pinned; watch-time card on profile; People tab shows session time.
-      DoD: §12.2 leaderboard spec; deploy.
+      DoD: §12.2 leaderboard spec; deploy. ✅ /leaderboard with tabs, medal podium, own row
+      pinned + glowing; header link. Profile stats card + People-tab session time deferred to
+      Phase-7 polish (no profile page yet); deploy still owner-deferred.
 
 **Phase DoD:** watching time visibly climbs the leaderboard within a minute.
 

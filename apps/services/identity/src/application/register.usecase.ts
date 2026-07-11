@@ -1,3 +1,4 @@
+import { makeDomainEvent } from '@lilochat/nest-shared';
 import { EmailAlreadyInUseError, NicknameAlreadyInUseError } from '../domain/errors.js';
 import type { Clock, IdGenerator, PasswordHasher, UserRepository } from '../domain/ports.js';
 import { User } from '../domain/user.js';
@@ -37,8 +38,14 @@ export class RegisterUseCase {
     });
     // Uniqueness is re-enforced by DB constraints: the repository maps unique
     // violations (concurrent registrations) back to these same domain errors.
-    await users.create(user);
-    // TODO(phase-2): publish identity.user.registered via the transactional outbox.
+    await users.create(
+      user,
+      makeDomainEvent(
+        'identity.user.registered',
+        { userId: user.id, nickname: user.nickname },
+        clock.now(),
+      ),
+    );
 
     return { user: user.toProfile(), ...(await tokens.issueNewFamily(user)) };
   }

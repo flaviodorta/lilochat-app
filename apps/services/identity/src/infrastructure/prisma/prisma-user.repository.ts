@@ -1,3 +1,5 @@
+import type { DomainEvent } from '@lilochat/contracts';
+import { outboxRowFrom } from '@lilochat/nest-shared';
 import { Prisma, type User as UserRow } from '../../../generated/client/index.js';
 import { EmailAlreadyInUseError, NicknameAlreadyInUseError } from '../../domain/errors.js';
 import type { UserRepository } from '../../domain/ports.js';
@@ -7,18 +9,30 @@ import type { PrismaService } from './prisma.service.js';
 export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(user: User): Promise<void> {
+  async create(user: User, event: DomainEvent<unknown>): Promise<void> {
     try {
-      await this.prisma.user.create({ data: this.toRow(user) });
+      const outbox = outboxRowFrom(event);
+      await this.prisma.$transaction([
+        this.prisma.user.create({ data: this.toRow(user) }),
+        this.prisma.outboxEvent.create({
+          data: { ...outbox, payload: outbox.payload as Prisma.InputJsonValue },
+        }),
+      ]);
     } catch (error) {
       this.rethrowUniqueViolation(error);
     }
   }
 
-  async update(user: User): Promise<void> {
+  async update(user: User, event: DomainEvent<unknown>): Promise<void> {
     try {
       const { id, ...data } = this.toRow(user);
-      await this.prisma.user.update({ where: { id }, data });
+      const outbox = outboxRowFrom(event);
+      await this.prisma.$transaction([
+        this.prisma.user.update({ where: { id }, data }),
+        this.prisma.outboxEvent.create({
+          data: { ...outbox, payload: outbox.payload as Prisma.InputJsonValue },
+        }),
+      ]);
     } catch (error) {
       this.rethrowUniqueViolation(error);
     }

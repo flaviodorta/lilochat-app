@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("ENGAGEMENT_DATABASE_URL")
+}
+
+/// One socket session in a room; `seconds` = QUALIFIED time only (§3.6):
+/// credited by checkpoints/left-remainders while the room was playing.
+model WatchSession {
+  id               String    @id @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  roomId           String    @map("room_id") @db.Uuid
+  startedAt        DateTime  @map("started_at")
+  endedAt          DateTime? @map("ended_at")
+  seconds          Int       @default(0)
+  lastCheckpointAt DateTime  @map("last_checkpoint_at")
+
+  @@index([userId])
+  @@map("watch_sessions")
+}
+
+/// Durable totals (rebuild source for the Redis ZSET leaderboards).
+model UserTotal {
+  userId  String @map("user_id") @db.Uuid
+  period  String
+  seconds Int    @default(0)
+
+  @@id([userId, period])
+  @@index([period, seconds(sort: Desc)])
+  @@map("user_totals")
+}
+
+/// Read model from identity.user.registered/updated — leaderboard display names.
+model UserProfile {
+  userId   String @id @map("user_id") @db.Uuid
+  nickname String
+
+  @@map("user_profiles")
+}
+
+/// Qualified-time gate: is the room's player running right now?
+model RoomState {
+  roomId    String   @id @map("room_id") @db.Uuid
+  playing   Boolean
+  updatedAt DateTime @map("updated_at")
+
+  @@map("room_states")
+}

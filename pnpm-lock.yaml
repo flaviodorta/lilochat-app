@@ -237,6 +237,76 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)
 
+  apps/services/engagement:
+    dependencies:
+      '@lilochat/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+      '@lilochat/nest-shared':
+        specifier: workspace:*
+        version: link:../../../packages/nest-shared
+      '@nestjs/common':
+        specifier: ^11.0.0
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: ^11.0.0
+        version: 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express':
+        specifier: ^11.0.0
+        version: 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)
+      '@prisma/client':
+        specifier: ^6.2.0
+        version: 6.19.3(prisma@6.19.3(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.6.1
+      ioredis:
+        specifier: ^5.4.2
+        version: 5.11.1
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.1
+        version: 7.8.2
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      '@lilochat/tooling':
+        specifier: workspace:*
+        version: link:../../../packages/tooling
+      '@nestjs/testing':
+        specifier: ^11.0.0
+        version: 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(@nestjs/platform-express@11.1.28)
+      '@types/express':
+        specifier: ^5.0.0
+        version: 5.0.6
+      '@types/node':
+        specifier: ^20.17.0
+        version: 20.19.43
+      '@types/supertest':
+        specifier: ^6.0.2
+        version: 6.0.3
+      eslint:
+        specifier: ^9.17.0
+        version: 9.39.5(jiti@2.7.0)
+      prisma:
+        specifier: ^6.2.0
+        version: 6.19.3(magicast@0.3.5)(typescript@5.9.3)
+      supertest:
+        specifier: ^7.0.0
+        version: 7.2.2
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.0
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)
+
   apps/services/identity:
     dependencies:
       '@lilochat/contracts':

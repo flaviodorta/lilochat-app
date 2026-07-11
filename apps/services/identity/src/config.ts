@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const identityEnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(4101),
   IDENTITY_DATABASE_URL: z.string().url(),
+  RABBITMQ_URL: z.string().min(1),
   /** base64-encoded PKCS8 PEM (RS256) — generate with `pnpm gen:keys`. */
   JWT_PRIVATE_KEY: z.string().min(1),
   ACCESS_TOKEN_TTL_SEC: z.coerce.number().int().positive().default(900), // 15 min

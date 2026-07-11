@@ -38,6 +38,13 @@ export function Header() {
           </div>
         </div>
 
+        <Link
+          href="/leaderboard"
+          className="focus-ring rounded-lg px-2 py-1 text-sm font-medium text-zinc-400 transition-colors hover:text-zinc-100 max-sm:hidden"
+        >
+          🏆 Leaderboard
+        </Link>
+
         <div className="ml-auto flex items-center gap-3">
           <Button
             size="sm"

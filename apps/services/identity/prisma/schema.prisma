@@ -41,3 +41,14 @@ model RefreshToken {
   @@index([familyId])
   @@map("refresh_tokens")
 }
+
+model OutboxEvent {
+  id          String    @id @db.Uuid
+  name        String
+  payload     Json
+  occurredAt  DateTime  @map("occurred_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt, id])
+  @@map("outbox_events")
+}

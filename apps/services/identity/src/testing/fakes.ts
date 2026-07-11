@@ -13,12 +13,15 @@ import { TokenIssuer } from '../application/token-issuer.js';
 
 export class FakeUserRepository implements UserRepository {
   readonly byId = new Map<string, User>();
+  readonly events: unknown[] = [];
 
-  async create(user: User): Promise<void> {
+  async create(user: User, event: unknown): Promise<void> {
     this.byId.set(user.id, user);
+    this.events.push(event);
   }
-  async update(user: User): Promise<void> {
+  async update(user: User, event: unknown): Promise<void> {
     this.byId.set(user.id, user);
+    this.events.push(event);
   }
   async findById(id: string): Promise<User | null> {
     return this.byId.get(id) ?? null;

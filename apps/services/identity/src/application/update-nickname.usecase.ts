@@ -1,4 +1,5 @@
 import type { UserProfile } from '@lilochat/contracts';
+import { makeDomainEvent } from '@lilochat/nest-shared';
 import { NicknameAlreadyInUseError, UserNotFoundError } from '../domain/errors.js';
 import type { Clock, UserRepository } from '../domain/ports.js';
 
@@ -23,9 +24,14 @@ export class UpdateNicknameUseCase {
     if (taken && taken.id !== user.id) throw new NicknameAlreadyInUseError();
 
     user.changeNickname(nickname, clock.now());
-    await users.update(user);
-    // TODO(phase-2): publish identity.user.updated via the transactional outbox
-    // so read models (chat nicknames, room cards) converge.
+    await users.update(
+      user,
+      makeDomainEvent(
+        'identity.user.updated',
+        { userId: user.id, nickname: user.nickname },
+        clock.now(),
+      ),
+    );
 
     return user.toProfile();
   }
