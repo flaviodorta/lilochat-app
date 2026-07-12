@@ -348,8 +348,14 @@ on the 2×RTG topology.
       avoid hydration drift); chat_disabled now chips "disabled by the crew" in-stream (6.5
       follow-up). Still open in Phase 7 backlog: chat virtualization + day dividers (3.6),
       People tab + session time (5.3), send-queue-until-joined (6.5).
-- [ ] **7.2 SEO & sharing.** Metadata, OG images per room (current video thumb + name), sitemap,
-      favicons from logo.
+- [x] **7.2 SEO & sharing.** Metadata, OG images per room (current video thumb + name), sitemap,
+      favicons from logo. ✅ metadataBase + OG/twitter defaults; room generateMetadata (name +
+      "Now playing: …"); DYNAMIC OG cards via next/og — per-room (thumb bg + scrim + name +
+      LIVE + viewers, graceful idle fallback) and home (logo + tagline + glow), both verified
+      as rendered 1200×630 PNGs; sitemap.xml (static + live rooms, 10-min revalidate,
+      fail-static); robots.txt (blocks /dev/ styleguide); PNG favicons 32/180/192/512
+      rasterized from the logo SVG + webmanifest (theme #9333ea). NEXT_PUBLIC_SITE_URL drives
+      absolute URLs — set it at deploy.
 - [ ] **7.3 README = portfolio front door.** Hero GIF (two browsers in sync), C4 diagrams,
       "architecture highlights" section linking CLAUDE.md + ADRs + load-test report, local-dev
       quickstart, screenshots.
