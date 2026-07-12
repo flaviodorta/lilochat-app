@@ -30,9 +30,11 @@ P6 ≈ 10%, P7 ≈ 5%. Phase 2 is the hardest and most valuable — protect time
 - [x] **0.5 nest-shared package (skeleton).** `packages/nest-shared`: zod-validated config module,
       pino logger module, health module (`/health/live|ready`). (Outbox/consumer come in P2 when
       first needed.) DoD: unit tests pass. ✅ 6 tests green.
-- [ ] **0.6 CI.** GitHub repo + Actions: lint → typecheck → test → build, Turborepo remote/actions
-      cache, affected-only. DoD: badge green on main.
-      ⚠ Workflow written (`.github/workflows/ci.yml`); pending: create the GitHub repo + first push.
+- [x] **0.6 CI.** GitHub repo + Actions: lint → typecheck → test → build, Turborepo remote/actions
+      cache, affected-only. DoD: badge green on main. ✅ repo live at
+      github.com/flaviodorta/lilochat-app (owner-created, 2026-07-12); CI green on main
+      (format check + turbo lint/typecheck/test/build with actions-cached .turbo); badge in the
+      README.
 - [x] **0.7 ADRs.** `docs/adr/` with MADR template + ADR-001..011 written from the CLAUDE.md index.
       DoD: files exist; index links resolve. (ADR-008 avatars: status Proposed — owner call pending.)
 - [x] **0.8 README skeleton.** Name, one-liner, logo, "under construction", link to CLAUDE.md.
@@ -86,9 +88,10 @@ Frontend:
       ✅ done locally: Playwright E2E (2 tests, full journey incl. cookie flags + session resume);
       Dockerfiles (turbo prune) for identity/gateway/web; Next standalone; compose.prod with
       Traefik + Let's Encrypt; all 3 images built and smoke-tested (register works containerized).
-      ⏳ owner decisions (2026-07-10): GitHub repo will be created manually by the owner (URL
-      pending → then: remote, push, CI green closes 0.6). VPS/domain deliberately deferred —
-      **Phase 2 first**, deploy when the sync core is demoable. Public-URL DoD moves with it.
+      ⏳ owner decisions (2026-07-10): GitHub repo ✅ done (2026-07-12, closes 0.6).
+      VPS/domain still deferred — the deploy is now THE one remaining external decision;
+      everything else (images, compose.prod, runbooks, backups) is ready and rehearsed.
+      Public-URL DoD moves with it.
 
 **Phase DoD:** a stranger can sign up on the internet and see their avatar. CI deploys on merge.
 

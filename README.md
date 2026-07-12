@@ -7,6 +7,10 @@
 <p align="center"><strong>Watch YouTube together, in perfect sync.</strong></p>
 
 <p align="center">
+  <a href="https://github.com/flaviodorta/lilochat-app/actions/workflows/ci.yml"><img src="https://github.com/flaviodorta/lilochat-app/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+</p>
+
+<p align="center">
   <img src="docs/media/hero.gif" alt="Two real browsers watching the same room — same frame, same tick of the clock" width="900" />
   <br />
   <sub>Two real browsers in one room: same frame, same tick of the server clock. Nobody can pause.</sub>

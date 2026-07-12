@@ -101,15 +101,30 @@ await c.screenshot({ path: `${OUT}/auth.png` });
 await ctxC.close();
 
 // ── hero GIF frames: both viewers side by side ───────────────────────────
+// Fresh contexts at deviceScaleFactor 1 (the stills use 2× — clipping those
+// would force a downscale and make the tickers unreadable). Desktop-width
+// viewport (narrow ones wrap the header), clipped to the player zone: the
+// pair reads as two players with matching tickers, at native resolution.
 console.log('capturing hero frames');
-await a.setViewportSize({ width: 880, height: 660 });
-await b.setViewportSize({ width: 880, height: 660 });
-await sleep(1200);
+const hero = { viewport: { width: 1150, height: 820 }, deviceScaleFactor: 1 };
+const clip = { x: 16, y: 88, width: 716, height: 492 };
+const ctxHa = await browser.newContext(hero);
+const ctxHb = await browser.newContext(hero);
+const ha = await ctxHa.newPage();
+const hb = await ctxHb.newPage();
+await signIn(ha, 'mila_watches@demo.lilochat.dev', 'Password123!');
+await signIn(hb, 'kenji_dev@demo.lilochat.dev', 'Password123!');
+await ha.goto(roomUrl);
+await hb.goto(roomUrl);
+await sleep(9000); // player boot + YouTube's own overlay chrome fades (~4s)
+await ha.mouse.move(10, 810); // park the cursor away from the player —
+await hb.mouse.move(10, 810); // hovering re-summons the iframe overlay
+await sleep(1500);
 for (let i = 0; i < 12; i += 1) {
   const n = String(i).padStart(2, '0');
   await Promise.all([
-    a.screenshot({ path: `${OUT}/frames/frame-a-${n}.png` }),
-    b.screenshot({ path: `${OUT}/frames/frame-b-${n}.png` }),
+    ha.screenshot({ path: `${OUT}/frames/frame-a-${n}.png`, clip }),
+    hb.screenshot({ path: `${OUT}/frames/frame-b-${n}.png`, clip }),
   ]);
   await sleep(700);
 }
