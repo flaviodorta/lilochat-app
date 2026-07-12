@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Wordmark } from '@/components/brand/wordmark';
+import { SearchInput } from '@/components/search-input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/auth-context';
 import { Avatar } from '@/features/auth/avatar';
@@ -19,23 +20,11 @@ export function Header() {
           <Wordmark />
         </Link>
 
-        {/* search — stub until rooms exist (Phase 2) */}
         <div className="mx-auto w-full max-w-md max-md:hidden">
-          <div className="relative">
-            <svg
-              aria-hidden
-              viewBox="0 0 24 24"
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 fill-none stroke-zinc-500 stroke-2"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.5-3.5" strokeLinecap="round" />
-            </svg>
-            <input
-              disabled
-              placeholder="Find a room… (soon)"
-              className="h-9 w-full cursor-not-allowed rounded-full border border-edge bg-surface pl-9 pr-4 text-sm text-zinc-400 placeholder:text-zinc-600"
-            />
-          </div>
+          {/* Suspense: useSearchParams inside would otherwise bail the whole page to CSR */}
+          <Suspense fallback={<div className="h-9 rounded-full border border-edge bg-surface" />}>
+            <SearchInput />
+          </Suspense>
         </div>
 
         <Link

@@ -75,6 +75,8 @@ Frontend:
       DoD: styleguide route (`/dev/ui`) rendering tokens + core components. ✅ verified live.
 - [x] **1.7 Header + shell.** Glassy sticky header: logo + wordmark, search (disabled stub),
       "Create room" CTA (stub), auth slot. DoD: responsive, matches §12.2.
+      ↳ search stub wired for real in Phase 7 (owner caught the "(soon)" leftover): debounced
+      input → `/?q=` URL param → server component → RoomsGrid → trigram search from 2.4.
 - [x] **1.8 Auth modal.** Dialog from header CTA + gated actions (no auth pages — owner call):
       animated slide between Sign in / Create account panels, react-hook-form + zod (same
       contracts), **live Multiavatar preview** on nickname typing (debounced), error states,

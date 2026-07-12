@@ -2,7 +2,12 @@ import { Header } from '@/components/header';
 import { OnboardingHint } from '@/components/onboarding-hint';
 import { RoomsGrid } from '@/features/rooms/rooms-grid';
 
-export default function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   return (
     <>
       <Header />
@@ -24,7 +29,7 @@ export default function HomePage() {
         <OnboardingHint />
 
         <section aria-label="Rooms">
-          <RoomsGrid />
+          <RoomsGrid q={q} />
         </section>
       </main>
     </>
