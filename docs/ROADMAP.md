@@ -356,9 +356,14 @@ on the 2×RTG topology.
       fail-static); robots.txt (blocks /dev/ styleguide); PNG favicons 32/180/192/512
       rasterized from the logo SVG + webmanifest (theme #9333ea). NEXT_PUBLIC_SITE_URL drives
       absolute URLs — set it at deploy.
-- [ ] **7.3 README = portfolio front door.** Hero GIF (two browsers in sync), C4 diagrams,
+- [x] **7.3 README = portfolio front door.** Hero GIF (two browsers in sync), C4 diagrams,
       "architecture highlights" section linking CLAUDE.md + ADRs + load-test report, local-dev
-      quickstart, screenshots.
+      quickstart, screenshots. ✅ hero.gif is the real thing: two headless browsers in one room,
+      same video frame + same ticker (YouTube renders via VP9 in headless Chromium — no stub!).
+      Screenshots (room/home/leaderboard/auth) captured by a committed, re-runnable script
+      (scripts/media/capture-screens.mjs) against a staged demo scene (real Blender-movie rooms,
+      seeded leaderboard). "Highlights with receipts" section links every claim to its ADR or
+      evidence doc (load test, drills, DR, security). Raw frames gitignored; media ≈ 6 MB.
 - [ ] **7.4 Analytics + launch.** Self-hosted Umami/Plausible; final domain, share (LinkedIn post
       is part of the portfolio plan — write it from the demo GIF).
 

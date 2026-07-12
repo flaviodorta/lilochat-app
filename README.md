@@ -1,43 +1,66 @@
 <p align="center">
-  <img src="public/lilochat-logo.svg" alt="LiloChat logo" width="96" />
+  <img src="apps/web/public/lilochat-logo.svg" alt="LiloChat logo" width="96" />
 </p>
 
 <h1 align="center">LiloChat</h1>
 
 <p align="center"><strong>Watch YouTube together, in perfect sync.</strong></p>
 
+<p align="center">
+  <img src="docs/media/hero.gif" alt="Two real browsers watching the same room — same frame, same tick of the clock" width="900" />
+  <br />
+  <sub>Two real browsers in one room: same frame, same tick of the server clock. Nobody can pause.</sub>
+</p>
+
 ---
 
 ## What is LiloChat
 
-LiloChat is a real-time "watch together" platform: public rooms where people watch YouTube videos
-in perfect sync, chat, build a shared queue, and vote to skip. Nobody can pause — each room runs
-its own broadcast-style timeline, like a TV channel curated by its users.
+A real-time "watch together" platform: public rooms where people watch YouTube videos in perfect
+sync, chat, build a shared queue, and vote to skip. Nobody can pause — each room runs its own
+broadcast-style timeline, like a TV channel curated by its users.
 
-The project has two equally important goals: a real deployed product operated with production
-discipline (SLOs, observability, backups, CI/CD), and a portfolio-grade demonstration of
+The project has two equally important goals: a real product operated with production discipline
+(SLOs, observability, backups, chaos drills, CI/CD), and a portfolio-grade demonstration of
 distributed-systems architecture where every significant decision is written down with its
-trade-offs — including the honest ones (see [ADR-001](docs/adr/001-deliberate-microservices.md)).
+trade-offs — including the honest ones (see
+[ADR-001](docs/adr/001-deliberate-microservices.md): at this scale a modular monolith would be
+cheaper; the microservices are the point).
 
-## Status: under active development
+## The trick that makes it cheap
 
-- [ ] **Phase 0 — Foundation** (monorepo, contracts, dev infra, CI, ADRs) — **in progress**
-- [ ] Phase 1 — Identity (auth end-to-end, design system seed)
-- [ ] Phase 2 — The Core (rooms, playback, real-time sync — two browsers watching in sync)
-- [ ] Phase 3 — Chat + Presence
-- [ ] Phase 4 — Queue UX + Skip Votes
-- [ ] Phase 5 — Engagement (watch-time leaderboards)
-- [ ] Phase 6 — Production Hardening (SLO dashboard, load test, DR rehearsal)
-- [ ] Phase 7 — Polish & Launch
+**Video bytes never touch our infrastructure.** YouTube streams directly to each client's
+embedded player — LiloChat synchronizes _time_, not video. Because nobody can pause, playback
+state per room collapses to a single tuple (`videoId`, `startedAt`, `duration`), and every
+client's correct position is pure arithmetic:
 
-Every phase ends deployed and demoable. The step-by-step plan with Definitions of Done lives in
-[docs/ROADMAP.md](docs/ROADMAP.md). Demo GIFs and screenshots arrive with Phase 7.
+```
+position(t) = clamp(t_server − startedAt, 0, duration)
+```
 
-## Architecture at a glance
+Clients estimate the server clock NTP-style over WebSocket, then continuously self-correct:
+drift under 1 s is ignored, 1–3 s is absorbed by nudging `playbackRate` to 1.05/0.95 (invisible),
+over 3 s hard-seeks. A page reload lands in sync _by construction_ — there is no state to ask
+anyone for. Full design: [CLAUDE.md §6.2](CLAUDE.md).
 
-The key insight: **video bytes never touch our infrastructure.** YouTube streams directly to each
-client's embedded player — LiloChat synchronizes _time_ (a server-authoritative timeline with
-client-side drift correction) and runs everything social around it.
+The flagship test is a Playwright spec that boots the entire backend, opens **two real browsers**
+in one room and asserts both stay within the 2-second sync budget through an auto-advance —
+plus a 3-browser spec where a skip vote moves everyone at once.
+
+## Screenshots
+
+| The room                                                       | The directory                                                          |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| ![Room — synced player, live chat, queue](docs/media/room.png) | ![Home — live cards, ticking timestamps on hover](docs/media/home.png) |
+
+| Watch-time leaderboard                                                      | Auth with live avatar preview                                                     |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| ![Leaderboard — podium and your own row pinned](docs/media/leaderboard.png) | ![Auth modal — the nickname renders your avatar as you type](docs/media/auth.png) |
+
+## Architecture
+
+Six deliberately-small services behind two gateways, event-driven choreography over RabbitMQ,
+database-per-service, Redis for every kind of hot state:
 
 ```mermaid
 graph TB
@@ -59,13 +82,9 @@ graph TB
     end
 
     subgraph Data
-        PG1[("identity_db")]
-        PG2[("rooms_db")]
-        PG3[("playback_db")]
-        PG4[("chat_db")]
-        PG5[("engagement_db")]
-        RD[("Redis — hot state, presence, cache, socket adapter")]
-        MQ[["RabbitMQ — domain events, topic exchange"]]
+        PG[("Postgres × 5<br/>database-per-service")]
+        RD[("Redis — hot state, presence,<br/>cache, socket adapter")]
+        MQ[["RabbitMQ — domain events,<br/>topic exchange"]]
     end
 
     WEB -->|REST| GW
@@ -73,51 +92,95 @@ graph TB
     GW --> ID & RM & PB & CH & EN
     RTG <--> MQ
     RTG --> RD
-    ID --> PG1
-    RM --> PG2
-    PB --> PG3
-    CH --> PG4
-    EN --> PG5
+    ID & RM & PB & CH & EN --> PG
     ID & RM & PB & CH & EN <--> MQ
     PB --> RD
     RM --> RD
     EN --> RD
 ```
 
-Highlights, each backed by an ADR: server-authoritative no-pause timeline with `playbackRate`
-drift nudging, event-driven choreography with a transactional outbox and idempotent consumers,
-a CQRS read model for the room directory, and database-per-service that is split-ready by
-construction.
+### Highlights — with receipts
+
+Every claim below links to the decision record or the evidence that it actually works:
+
+- **Server-authoritative no-pause timeline** with `playbackRate` drift-nudging
+  ([ADR-004](docs/adr/004-server-authoritative-timeline.md)) — the client-side authority of the legacy version was the biggest
+  lesson feeding this rewrite.
+- **Transactional outbox + idempotent consumers** ([ADR-005](docs/adr/005-transactional-outbox.md)) — effectively-once
+  event handling; the kill-the-relay test proves 0 losses, and consumer dedup collapses the
+  duplicates.
+- **Choreography over orchestration** ([ADR-002](docs/adr/002-event-driven-choreography.md)), **CQRS read model** for the room
+  directory ([ADR-006](docs/adr/006-cqrs-room-directory.md)) — the home page is one indexed query, composed at write time.
+- **Observability as config, not code** ([ADR-011](docs/adr/011-observability-otel.md)): OpenTelemetry → Collector →
+  Grafana/Prometheus/Loki/Tempo, W3C trace context propagated through HTTP _and_ RabbitMQ
+  headers, a provisioned SLO dashboard with the sync-drift histogram as the product-defining
+  SLI, and file-provisioned alerts (burn rate, DLQ depth, outbox lag, drift p95).
+- **[Load test report](docs/load-test-report.md)** — 1,000 sockets across 50 rooms with a chat
+  storm 50× the design spec: chat delivery p95 **11 ms** vs a 500 ms SLO, gateway at 10% of one
+  core; 2,000 sockets still green.
+- **[Degradation drills](docs/degradation-drills.md)** — RabbitMQ killed under chat traffic:
+  79/79/79 messages delivered _and_ persisted (bus auto-reconnect + bounded publish buffer were
+  built because the first drill failed). Redis killed: the first run crashed the gateway, the
+  fixes are in the doc. Honest chaos, receipts included.
+- **[DR rehearsal](docs/runbooks/restore.md)** — WAL archiving (5-min RPO by `archive_timeout`),
+  nightly base backups, and a scripted, timed restore drill that replays post-backup writes from
+  WAL. Plus runbooks for [deploy](docs/runbooks/deploy.md),
+  [DLQ replay](docs/runbooks/dlq-replay.md) and
+  [secrets rotation](docs/runbooks/secrets-rotation.md) (JWT keypair rotation rehearsed live —
+  sessions survive via one silent refresh).
+- **[Security pass](docs/security-pass.md)** — 15-item checklist with evidence: argon2id, RS256
+  with refresh-family reuse detection, CSP allowlist, layered token buckets, `pnpm audit` clean,
+  known/accepted items stated explicitly.
 
 ## Stack
 
-| Layer         | Technology                       | Role                                                                  |
-| ------------- | -------------------------------- | --------------------------------------------------------------------- |
-| Frontend      | Next.js (App Router, TypeScript) | Web app: SSR home, synced player, chat, leaderboards                  |
-| Backend       | NestJS                           | API gateway, realtime gateway, five domain services                   |
-| Realtime      | Socket.io (Redis adapter)        | WebSockets: rooms, chat, presence, clock sync                         |
-| Database      | PostgreSQL                       | Database-per-service (five logical databases)                         |
-| Hot state     | Redis                            | Presence TTL keys, playback tuples, caches, leaderboards, rate limits |
-| Messaging     | RabbitMQ                         | Domain events over a topic exchange (choreography + outbox)           |
-| Observability | OpenTelemetry + Grafana stack    | OTLP → Collector → Prometheus / Loki / Tempo / Grafana                |
+| Layer         | Technology                       | Role                                                                     |
+| ------------- | -------------------------------- | ------------------------------------------------------------------------ |
+| Frontend      | Next.js (App Router, TypeScript) | SSR home, synced player, chat, leaderboards, dynamic OG cards            |
+| Backend       | NestJS                           | API gateway, realtime gateway, five domain services (hexagonal-lite)     |
+| Realtime      | Socket.io (Redis adapter)        | Rooms, chat, presence, NTP-style clock sync                              |
+| Data          | PostgreSQL · Redis · RabbitMQ    | Database-per-service · hot state & caches · domain events (choreography) |
+| Observability | OpenTelemetry + Grafana stack    | OTLP → Collector → Prometheus / Loki / Tempo, SLO dashboard + alerts     |
+| Testing       | Vitest · Playwright · k6         | Unit/integration per service · multi-browser sync E2E · WS load          |
 
-## Documentation
+## Status
 
-- [CLAUDE.md](CLAUDE.md) — the full architecture plan: requirements, SLOs, service catalog, core
-  flows, API surface, design system, and conventions. The single source of truth.
-- [docs/ROADMAP.md](docs/ROADMAP.md) — the execution roadmap, phase by phase.
-- [docs/adr/](docs/adr/) — Architecture Decision Records: every significant decision with its
-  context, considered options, and consequences.
+Phases 0–6 are complete (foundation → identity → sync core → chat/presence → queue+votes →
+engagement → production hardening); Phase 7 (polish & launch) is in progress and the first
+public deploy is an owner decision away. The phase-by-phase plan with verified Definitions of
+Done lives in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Local development
 
-> Placeholder — firmed up as Phase 0 completes. Requires Node.js (see `.nvmrc`), pnpm, and Docker.
+Requires Node 20+, pnpm and Docker.
 
 ```bash
-pnpm install                                   # install workspace dependencies
-docker compose -f docker/compose.dev.yml up -d # Postgres, Redis, RabbitMQ (+ observability profile)
-turbo dev                                      # run all apps with hot reload
+pnpm install
+docker compose -f docker/compose.dev.yml up -d     # postgres, redis, rabbitmq
+node scripts/gen-keys.mjs                          # RS256 keypair → paste into the .env files
+# create each app's .env from its .env.example (ports, urls and keys are documented there)
+pnpm turbo dev                                     # everything, hot reload
+
+# the full test story
+pnpm turbo test                                    # unit
+pnpm --filter @lilochat/nest-shared test:int       # integration (real pg/redis/rabbit)
+cd apps/web && pnpm exec playwright test           # E2E — boots the whole stack itself
+
+# observability playground
+docker compose -f docker/compose.dev.yml --profile obs up -d
+OTEL_ENABLED=1 pnpm turbo dev                      # SLO dashboard at localhost:3003
 ```
+
+## Documentation map
+
+- [CLAUDE.md](CLAUDE.md) — the architecture plan: requirements, SLOs, service catalog, core
+  flows, API surface, design system. The single source of truth.
+- [docs/ROADMAP.md](docs/ROADMAP.md) — execution roadmap with per-step verification notes.
+- [docs/adr/](docs/adr/) — Architecture Decision Records (context, options, consequences).
+- [docs/runbooks/](docs/runbooks/) — deploy, restore, DLQ replay, secrets rotation.
+- [docs/load-test-report.md](docs/load-test-report.md) ·
+  [docs/degradation-drills.md](docs/degradation-drills.md) ·
+  [docs/security-pass.md](docs/security-pass.md) — the evidence locker.
 
 ---
 
